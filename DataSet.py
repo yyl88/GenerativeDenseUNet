@@ -27,7 +27,7 @@ class LoadSeismicNumpyFiles():
 
         #self.rearange_labels(self.training['label'])
         #self.rearange_labels(self.validation['label'])
-        #self.augment_training_dataset()
+        self.augment_training_dataset()
 
     def load_seismic_label_set(self, dic, path, keys):
         # load .npy files in pairs (data/label)
@@ -36,8 +36,9 @@ class LoadSeismicNumpyFiles():
             dic[keys[1]] = np.load(path[i+1])
 
     def augment_training_dataset(self):
-        self.training['seismic'] = self.sobel_aug(self.training['seismic'])
-        self.validation['seismic'] = self.sobel_aug(self.validation['seismic'])
+        self.training['seismic'] = self.random_noise_aug(self.training['seismic'])
+        #self.training['seismic'] = self.sobel_aug(self.training['seismic'])
+        #self.validation['seismic'] = self.sobel_aug(self.validation['seismic'])
         #self.testing['seismic'] = self.sato_aug(self.testing['seismic'])
 
     def rearange_labels(self, x):
