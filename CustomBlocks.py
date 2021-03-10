@@ -140,13 +140,12 @@ class ContrastiveLoss(Loss):
         return loss
 
 class LogCoshDiceLoss(Loss):
-    r"""Computes the focal log cosh dice loss.
+    r"""Computes the log cosh dice loss.
     Inputs:
         - **pred**: the prediction tensor, where the `batch_axis` dimension
           ranges over batch size and `axis` dimension ranges over the number
           of classes.
         - **label**: the truth tensor.  
-        - **gamma**: hyper parameter for focal loss 
     Outputs:
         - **loss**: loss tensor with shape (batch_size,). 
     """
