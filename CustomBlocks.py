@@ -173,6 +173,6 @@ class LogCoshDiceLoss(Loss):
 
         log_cosh_diceloss = self.log_cosh_diceloss(F, pred, one_hot, weight)
 
-        #logits = F.log_softmax(pred, axis=self._axis) * (1 - F.softmax(pred, axis=self._axis))**2
-        #softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits, one_hot)
-        return 2*log_cosh_diceloss
+        logits = F.log_softmax(pred, axis=self._axis) * (1 - F.softmax(pred, axis=self._axis))**2
+        softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits, one_hot)
+        return 2*log_cosh_diceloss + softmax_cross_entropy_loss
