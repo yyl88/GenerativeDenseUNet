@@ -1,4 +1,4 @@
-# DenseRbfUNet
+# RBFDenseUNet
 A UNet architecture with Dense blocks, and an RBF output layer.
 
 An RBF based artificial neural networks used for the purpose of semantic image segmentation. The backbone of this model is a DenseUNet with an Rbf output layer. The models allows the flexibility of running inference using Bayes Theorem, or Softmax, or both. 
