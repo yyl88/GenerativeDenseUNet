@@ -102,12 +102,8 @@ class CosRbfBlock(nn.Block):
 
     def forward(self, x):
         likelihood = self.rbf_block(x)
-
         cos_kernel = self.cos_kernel(x.swapaxes(1,3), self.rbf_block.mu.data())
         cos_kernel = self._sigmoid(cos_kernel).swapaxes(1,3)
-
-        print(self.rbf_block.mu.data())
-        print(self.rbf_block.gamma.data())
         return cos_kernel * likelihood
 
 class LocalLinearBlock(nn.Block):
@@ -127,7 +123,6 @@ class LocalLinearBlock(nn.Block):
 
         x = F.sum(diff * self.weight.data(), axis=4)
         x = x + self.bias.data()
-
         return x.swapaxes(1,3) * rbf
 
 class ContrastiveLoss(Loss):
@@ -144,7 +139,7 @@ class ContrastiveLoss(Loss):
         loss = 0.5*loss
         return loss
 
-class FocalLogCoshDiceLoss(Loss):
+class LogCoshDiceLoss(Loss):
     r"""Computes the focal log cosh dice loss.
     Inputs:
         - **pred**: the prediction tensor, where the `batch_axis` dimension
@@ -156,7 +151,7 @@ class FocalLogCoshDiceLoss(Loss):
         - **loss**: loss tensor with shape (batch_size,). 
     """
     def __init__(self, num_classes, axis=1, weight=None, batch_axis=0, **kwargs):
-        super(FocalLogCoshDiceLoss, self).__init__(weight, batch_axis, **kwargs)
+        super(LogCoshDiceLoss, self).__init__(weight, batch_axis, **kwargs)
         self.softmax_cross_entropy_loss = gluon.loss.SoftmaxCELoss(axis=axis, from_logits=True, sparse_label=False, weight=0.1)
         self._num_classes = num_classes
         self._axis = axis
