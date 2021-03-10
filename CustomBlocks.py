@@ -152,7 +152,7 @@ class LogCoshDiceLoss(Loss):
     """
     def __init__(self, num_classes, axis=1, weight=None, batch_axis=0, **kwargs):
         super(LogCoshDiceLoss, self).__init__(weight, batch_axis, **kwargs)
-        self.softmax_cross_entropy_loss = gluon.loss.SoftmaxCELoss(axis=axis, from_logits=True, sparse_label=False, weight=0.1)
+        #self.softmax_cross_entropy_loss = gluon.loss.SoftmaxCELoss(axis=axis, from_logits=True, sparse_label=False, weight=0.1)
         self._num_classes = num_classes
         self._axis = axis
 
@@ -173,6 +173,6 @@ class LogCoshDiceLoss(Loss):
 
         log_cosh_diceloss = self.log_cosh_diceloss(F, pred, one_hot, weight)
 
-        logits = F.log_softmax(pred, axis=self._axis) * (1 - F.softmax(pred, axis=self._axis))**2
-        softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits, one_hot)
-        return 2*log_cosh_diceloss + softmax_cross_entropy_loss
+        #logits = F.log_softmax(pred, axis=self._axis) * (1 - F.softmax(pred, axis=self._axis))**2
+        #softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits, one_hot)
+        return 2*log_cosh_diceloss #+ softmax_cross_entropy_loss

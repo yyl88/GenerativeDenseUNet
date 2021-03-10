@@ -106,7 +106,7 @@ metric = mx.metric.Accuracy()
 log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6) 
 #gluon.loss.SoftmaxCrossEntropyLoss(axis=1, weight=0.5)
 
-train_data = np_datasets.create_gluon_loader(np_datasets.training, batch_transforms=True)
+train_data = np_datasets.create_gluon_loader(np_datasets.training, batch_transforms=False)
 val_data = np_datasets.create_gluon_loader(np_datasets.validation)
 test_data = np_datasets.create_gluon_loader(np_datasets.testing)
 
