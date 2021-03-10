@@ -1,0 +1,10 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/__pycache__/CustomBlocks.cpython-37.pyc
+/__pycache__/Train.cpython-37.pyc
+/__pycache__/DenseUnet_2D.cpython-37.pyc
+/DenseRBFUnet_1
+/data
+/raw
