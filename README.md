@@ -1,7 +1,7 @@
 # RBFDenseUNet
 A UNet architecture with Dense blocks, and an RBF output layer.
 
-An RBF based artificial neural networks used for the purpose of semantic image segmentation. The backbone of this model is a DenseUNet with an Rbf output layer. The models allows the flexibility of running inference using Bayes Theorem, or Softmax, or both. 
+An RBF based artificial neural networks used for the purpose of semantic image segmentation. The backbone of this model is a DenseUNet with an Rbf output layer. The models allows inference using Bayes Theorem, or Softmax, or both. 
 
 The dataset can be found in this repo: https://github.com/yalaudah/facies_classification_benchmark
 
