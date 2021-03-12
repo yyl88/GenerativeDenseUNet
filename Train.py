@@ -36,7 +36,7 @@ class Fit():
     def _fit(self):
         lr_reduced = False
         lr = 0.001
-        thresh_hold = 0.89
+        thresh_hold = 0.90
         
         for i in range(self.epoch):
             t_acc = self.train_data_iterator()
@@ -47,10 +47,34 @@ class Fit():
 
             if b_acc > thresh_hold and not lr_reduced:
                 thresh_hold += 0.03
+                lr_reduced = True
 
-                lr = lr / 10
+                lr = 0.0001
                 self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
                 print("learning rate reduced")
+
+    def latent_space(self):
+         # Loop over the test data iterator.
+        for (data, label) in self.val_data:
+            data_batch = gluon.utils.split_and_load(data, ctx_list=self.ctx, batch_axis=0)
+
+            label_batch = gluon.utils.split_and_load(label, ctx_list=self.ctx, batch_axis=0)
+
+            embeddings = self.net.embeddings(data_batch[0])
+            #output = self.net.posterior(data_batch[0])
+
+        return nd.softmax(embeddings, axis=1).asnumpy(), label_batch[0].asnumpy()
+
+    def error(self):
+         # Loop over the test data iterator.
+        for (data, label) in self.val_data:
+            data_batch = gluon.utils.split_and_load(data, ctx_list=self.ctx, batch_axis=0)
+
+            label_batch = gluon.utils.split_and_load(label, ctx_list=self.ctx, batch_axis=0)
+
+            model_error = self.net.bayes_error_rate(data_batch[0])
+
+        return model_error.asnumpy()
 
     def val_data_iterator(self, inference=False, bayes=False):
         r"""
@@ -84,13 +108,14 @@ class Fit():
         # Reset evaluation result to initial state.
         self.metric.reset()
         
-        if not inference:
-            return v_acc
-        else:   
+        if inference:
             if bayes:
                 return label.asnumpy(), output
             else:
                 return label.asnumpy(), nd.softmax(output, axis=1)
+        else:
+            return v_acc
+
 
     def train_data_iterator(self):
         # Loop over the train data iterator.
@@ -123,4 +148,4 @@ class Fit():
         
         # Reset evaluation result to initial state.
         self.metric.reset()
-        return t_acc   
+        return t_acc

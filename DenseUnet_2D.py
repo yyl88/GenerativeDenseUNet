@@ -45,7 +45,7 @@ class DenseUNet(nn.HybridBlock):
                 make_transition(growth_rate[3]),
             )
 
-            #self.f4 = nn.Conv2D(1, kernel_size=3, padding=1, activation="softsign")
+            #self.f4 = nn.Conv2D(1, kernel_size=3, padding=1, activation="relu")
             self.f3 = nn.Conv2D(1, kernel_size=3, padding=1, activation="relu")
             self.f2 = nn.Conv2D(1, kernel_size=3, padding=1, activation="relu")
             self.f1 = nn.Conv2D(1, kernel_size=3, padding=1, activation="relu")

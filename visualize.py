@@ -8,14 +8,14 @@ def plot_mu_vs_code(code, labels, mu_class, mu, gamma):
 
     fig.add_trace( 
         go.Scatter3d(
-            x=code[:,0],
-            y=code[:,1], 
-            z=code[:,2],
+            x=code[0,:,:,0].flatten(),
+            y=code[0,:,:,1].flatten(), 
+            z=code[0,:,:,2].flatten(),
             name='class',
             mode='markers',
             marker=dict(
                 size=0.8, 
-                color=labels.astype(int),
+                #color=labels.astype(int),
                 colorscale='Rainbow'
             ) 
         )
@@ -37,6 +37,6 @@ def plot_mu_vs_code(code, labels, mu_class, mu, gamma):
         )
     )
 
-    fig.update_layout(template="plotly_dark", title="MNIST latent space & Rbf nodes")
+    fig.update_layout(template="plotly_dark", title="latent space")
 
     fig.show()

@@ -75,6 +75,9 @@ class RbfBlock(nn.Block):
         x = x.swapaxes(1,3)
         return F.expand_dims(x, axis=3) - self.mu.data()
 
+    def get_rbf_kernel_stats(self):
+        return self.mu.data().asnumpy(), self.gamma.data().asnumpy()
+
     def forward(self, x):
         x = x.swapaxes(1,3)
 
@@ -90,15 +93,25 @@ class RbfBlock(nn.Block):
 class CosRbfBlock(nn.Block):
     def __init__(self, units, in_units, kernel="TriWeight", norm="l2", **kwargs):
         super(CosRbfBlock, self).__init__(**kwargs)
+        mu_init = mx.init.Xavier(magnitude=1.0)
         with self.name_scope():
             self.cos_kernel = CosKernelBlock()
-            self.rbf_block = RbfBlock(units, in_units, mu_init=mx.init.Xavier(magnitude=1), kernel=kernel, norm=norm, priors=False)
+            self.rbf_block = RbfBlock(units, in_units, mu_init=mu_init, kernel=kernel, norm=norm, priors=False)
 
     def _sigmoid(self, x):
         return (1 / (1 + F.exp(-6 * x)))
 
     def diff(self, x):
         return self.rbf_block.diff(x)
+
+    def get_mu(self):
+        return F.softmax(self.rbf_block.mu.data(), axis=1).asnumpy()
+    
+    def get_gamma(self):
+        return self.rbf_block.gamma.data().asnumpy()
+
+    def get_rbf_kernel_stats(self):
+        return self.get_mu(), self.get_gamma()
 
     def forward(self, x):
         likelihood = self.rbf_block(x)
@@ -109,17 +122,27 @@ class CosRbfBlock(nn.Block):
 class LocalLinearBlock(nn.Block):
     def __init__(self, units, in_units, kernel="TriWeight", norm="l2", **kwargs):
         super(LocalLinearBlock, self).__init__(**kwargs)
+        mu_init = mx.init.Xavier(magnitude=1.0)
         with self.name_scope():
             self.weight = self.params.get('weight', shape=(units, in_units), init=mx.init.Xavier(magnitude=2.24))
             self.bias = self.params.get('bias', shape=(units, ), init=mx.init.One())
 
-            self.RbfBlock = RbfBlock(units, in_units, mu_init=mx.init.Xavier(magnitude=1), kernel=kernel, norm=norm, priors=False)
+            self.rbf_block = RbfBlock(units, in_units, mu_init=mu_init, kernel=kernel, norm=norm, priors=False)
             #self.RbfBlock = CosRbfBlock(units, in_units)
+
+    def get_mu(self):
+        return self.rbf_block.mu.data().asnumpy()
+    
+    def get_gamma(self):
+        return self.rbf_block.gamma.data().asnumpy()
+
+    def get_rbf_kernel_stats(self):
+        return self.get_mu(), self.get_gamma()
 
     def forward(self, x):
 
-        rbf = self.RbfBlock(x)
-        diff = self.RbfBlock.diff(x)
+        rbf = self.rbf_block(x)
+        diff = self.rbf_block.diff(x)
 
         x = F.sum(diff * self.weight.data(), axis=4)
         x = x + self.bias.data()
@@ -151,7 +174,7 @@ class LogCoshDiceLoss(Loss):
     """
     def __init__(self, num_classes, axis=1, weight=None, batch_axis=0, **kwargs):
         super(LogCoshDiceLoss, self).__init__(weight, batch_axis, **kwargs)
-        #self.softmax_cross_entropy_loss = gluon.loss.SoftmaxCELoss(axis=axis, from_logits=True, sparse_label=False, weight=0.1)
+        self.softmax_cross_entropy_loss = gluon.loss.SoftmaxCELoss(axis=axis, from_logits=True, sparse_label=False, weight=0.1)
         self._num_classes = num_classes
         self._axis = axis
 
@@ -167,11 +190,12 @@ class LogCoshDiceLoss(Loss):
 
     def hybrid_forward(self, F, pred, label):
         weight = F.Cast(label + 1, np.float32)
+        #error = (1 - F.max(F.softmax(pred, axis=1), axis=1)).expand_dims(axis=1)
         one_hot = F.one_hot(label, self._num_classes).swapaxes(1, 4)
         one_hot = F.squeeze(one_hot, axis=4)
 
         log_cosh_diceloss = self.log_cosh_diceloss(F, pred, one_hot, weight)
 
-        #logits = F.log_softmax(pred, axis=self._axis) * (1 - F.softmax(pred, axis=self._axis))**2
-        #softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits, one_hot)
-        return 2*log_cosh_diceloss #+ softmax_cross_entropy_loss
+        #logits = F.log_softmax(pred, axis=self._axis) #* (1 - F.softmax(pred, axis=self._axis))**2
+        #softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits * weight, one_hot)
+        return log_cosh_diceloss #+ softmax_cross_entropy_loss
