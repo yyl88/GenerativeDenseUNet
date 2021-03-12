@@ -4,6 +4,7 @@ A UNet architecture with Dense blocks, and an RBF output layer.
 An RBF based artificial neural networks used for the purpose of semantic image segmentation. The backbone of this model is a DenseUNe. The head of the convolutional neural network is an RBF layer. Inference can be done using Bayes Theorem, or Softmax. 
 
 The dataset used for training and validation can be found in this repo: https://github.com/yalaudah/facies_classification_benchmark
+I was inspired by this repo which is worth looking into: https://github.com/microsoft/seismic-deeplearning
 
 Papers: "Densely Connected Convolutional Networks",
 "U-Net: Convolutional Networks for Biomedical Image Segmentation", 
