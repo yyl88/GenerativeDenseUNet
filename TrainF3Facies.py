@@ -15,7 +15,7 @@ import plotly.io as pio
 from DataSet import *
 from DenseUnet_2D import DenseUNet
 from CustomBlocks import *
-from Train import *
+from Fit import *
 import time
 
 #--------------------------------------------------------------------------------------------------
