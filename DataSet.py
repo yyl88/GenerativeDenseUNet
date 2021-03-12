@@ -36,10 +36,8 @@ class LoadSeismicNumpyFiles():
             dic[keys[1]] = np.load(path[i+1])
 
     def preprocessing(self):
-        #self.training['seismic'] = self.random_noise_aug(self.training['seismic'])
         self.training['seismic'] = self.sobel_aug(self.training['seismic'])
         self.validation['seismic'] = self.sobel_aug(self.validation['seismic'])
-        #self.testing['seismic'] = self.sato_aug(self.testing['seismic'])
 
     def rearange_labels(self, x):
         x[x == 4] = 10

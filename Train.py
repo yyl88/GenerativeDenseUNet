@@ -36,7 +36,7 @@ class Fit():
     def _fit(self):
         lr_reduced = False
         lr = 0.001
-        thresh_hold = 0.90
+        thresh_hold = 0.89
         
         for i in range(self.epoch):
             t_acc = self.train_data_iterator()
@@ -49,7 +49,7 @@ class Fit():
                 thresh_hold += 0.03
                 lr_reduced = True
 
-                lr = 0.0001
+                lr = 0.0006
                 self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
                 print("learning rate reduced")
 
@@ -61,7 +61,6 @@ class Fit():
             label_batch = gluon.utils.split_and_load(label, ctx_list=self.ctx, batch_axis=0)
 
             embeddings = self.net.embeddings(data_batch[0])
-            #output = self.net.posterior(data_batch[0])
 
         return nd.softmax(embeddings, axis=1).asnumpy(), label_batch[0].asnumpy()
 

@@ -46,6 +46,7 @@ class JoelsSegNet(gluon.Block):
             self.RbfBlock = CosRbfBlock(6, 4)
             #self.RbfBlock = LocalLinearBlock(6, 4)
             
+            self.BatchNormBlock_0 = nn.BatchNorm()
             self.BatchNormBlock = nn.BatchNorm()
 
     def forward(self, x):
@@ -64,6 +65,7 @@ class JoelsSegNet(gluon.Block):
 
     def rbf_output(self, x):
         x = self.embeddings(x)
+        x = self.BatchNormBlock_0(x)
         x = self.RbfBlock(x)
         return x
 
@@ -79,7 +81,7 @@ class JoelsSegNet(gluon.Block):
 
     def bayes_error_rate(self, x):
         probability = self.posterior(x)
-        error = F.max(probability, axis=1)
+        error = 1 - F.max(probability, axis=1)
         return error
 
 #--------------------------------------------------------------------------------------------------
@@ -112,12 +114,12 @@ net = JoelsSegNet()
 # set the context on GPU is available otherwise CPU
 ctx = [mx.gpu() if mx.test_utils.list_gpus() else mx.cpu()]
 
-net.load_parameters("DenseRBFUNet_1", ctx)
+#net.load_parameters("DenseRBFUNet_1", ctx)
 
 net.initialize(mx.init.Xavier(magnitude=2.24), ctx=ctx)
 net.hybridize()
 
-trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.0006})
+trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.001})
 
 # Use Accuracy as the evaluation metric.
 metric = mx.metric.Accuracy()
@@ -125,7 +127,7 @@ log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6)
 
 #--------------------------------------------------------------------------------------------------
 
-train_data = np_datasets.create_gluon_loader(np_datasets.training, batch_transforms=False)
+train_data = np_datasets.create_gluon_loader(np_datasets.training, batch_transforms=True, shuffle=True)
 val_data = np_datasets.create_gluon_loader(np_datasets.validation)
 test_data = np_datasets.create_gluon_loader(np_datasets.testing)
 
