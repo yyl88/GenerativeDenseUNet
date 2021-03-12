@@ -25,3 +25,11 @@ https://arxiv.org/pdf/2006.14822.pdf
 https://www.cc.gatech.edu/~lsong/papers/FukSonGre12.pdf
 
 https://www.hindawi.com/journals/aaa/2014/176253/
+
+https://arxiv.org/pdf/1811.00410.pdf
+
+https://openaccess.thecvf.com/content_cvpr_2018/papers/Huang_CondenseNet_An_Efficient_CVPR_2018_paper.pdf
+
+https://arxiv.org/pdf/1905.12200.pdf
+
+https://arxiv.org/pdf/2004.13912.pdf
