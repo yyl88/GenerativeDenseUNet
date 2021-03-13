@@ -13,17 +13,17 @@ from skimage.morphology import disk, cube
 class LoadSeismicNumpyFiles():
     def __init__(self, training_path_list, validation_path_list, testing_path_list, **kwargs):
 
-        self.training_dataset_keys = ['seismic', 'label']
-        self.validation_dataset_keys = ['seismic', 'label']
-        self.testing_dataset_keys = ['seismic', 'label']
+        self._dataset_keys = ['seismic', 'label']
 
+        # dic for datasets
         self.training = {}
         self.validation = {}
         self.testing = {}
 
-        self.load_seismic_label_set(self.training, training_path_list, self.training_dataset_keys)
-        self.load_seismic_label_set(self.validation, validation_path_list, self.validation_dataset_keys)
-        self.load_seismic_label_set(self.testing, testing_path_list, self.testing_dataset_keys)
+        # load each volume separately
+        self.load_seismic_label_set(self.training, training_path_list, self._dataset_keys)
+        self.load_seismic_label_set(self.validation, validation_path_list, self._dataset_keys)
+        self.load_seismic_label_set(self.testing, testing_path_list, self._dataset_keys)
 
     def load_seismic_label_set(self, dic, path, keys):
         # load .npy files in pairs (data/label)
@@ -68,6 +68,8 @@ class LoadSeismicNumpyFiles():
         return gluon.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
     def swapaxes(self, data, label, timeslice):
+        # swap the axes of the volumes to train on XLine
+        # if timeslice is true, swap axes of volume to train on time slices
         if timeslice:
             return data.swapaxes(0,2), label.swapaxes(0,2)
         else:
