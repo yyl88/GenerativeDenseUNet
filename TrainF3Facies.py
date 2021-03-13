@@ -42,9 +42,9 @@ class JoelsSegNet(gluon.Block):
                                                     strides=4, 
                                                     use_bias=False)
             
+            #self.RbfBlock = LocalLinearBlock(6, 4)
             #self.RbfBlock = RbfBlock(6, 4, mu_init=mx.init.Xavier(magnitude=1))
             self.RbfBlock = CosRbfBlock(6, 4)
-            #self.RbfBlock = LocalLinearBlock(6, 4)
             
             self.BatchNormBlock_0 = nn.BatchNorm()
             self.BatchNormBlock = nn.BatchNorm()
