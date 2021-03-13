@@ -1,5 +1,6 @@
 # RBFDenseUNet
-A UNet architecture with Dense blocks, and an RBF output layer.
+A UNet architecture with Dense blocks, and an RBF output.
+This code leverages the MxNet framework: https://mxnet.apache.org/versions/1.8.0/
 
 An RBF based artificial neural networks used for the purpose of semantic image segmentation. The backbone of this model is a DenseUNe. The head of the convolutional neural network is an RBF layer. Inference can be done using Bayes Theorem, or Softmax. 
 
