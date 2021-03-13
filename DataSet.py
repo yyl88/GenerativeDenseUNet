@@ -25,19 +25,23 @@ class LoadSeismicNumpyFiles():
         self.load_seismic_label_set(self.validation, validation_path_list, self.validation_dataset_keys)
         self.load_seismic_label_set(self.testing, testing_path_list, self.testing_dataset_keys)
 
-        #self.rearange_labels(self.training['label'])
-        #self.rearange_labels(self.validation['label'])
-        self.preprocessing()
-
     def load_seismic_label_set(self, dic, path, keys):
         # load .npy files in pairs (data/label)
         for i in range(0, len(path), 2):
             dic[keys[0]] = np.float32(np.load(path[i]))
             dic[keys[1]] = np.load(path[i+1])
 
-    def preprocessing(self):
-        self.training['seismic'] = self.sobel_aug(self.training['seismic'])
-        self.validation['seismic'] = self.sobel_aug(self.validation['seismic'])
+    def preprocessing(self, data, label, swapaxes, timeslice):
+        if swapaxes:
+            data, label = self.swapaxes(data, label, timeslice)
+
+        sobel = np.expand_dims(self.sobel_aug(data), axis=1)
+        
+        label = np.expand_dims(label, axis=1)
+        data = np.expand_dims(data, axis=1)
+
+        data = np.concatenate((sobel, data), axis=1)
+        return data, label
 
     def rearange_labels(self, x):
         x[x == 4] = 10
@@ -54,11 +58,7 @@ class LoadSeismicNumpyFiles():
             label = dataset_dic[next(dataset_iter)]
             print(f'Generating gluon dataset from {dataset_dic.keys()}')
 
-        if swapaxes:
-            data, label = self.swapaxes(data, label, timeslice)
-
-        data = np.expand_dims(data, axis=1)
-        label = np.expand_dims(label, axis=1)
+        data, label = self.preprocessing(data, label, swapaxes, timeslice)
 
         dataset = gluon.data.dataset.ArrayDataset(data, label)
         
@@ -78,8 +78,8 @@ class LoadSeismicNumpyFiles():
         data = random_noise(data, var=sigma**2)
         return np.float32(data)
 
-    def sharpen_aug(self, data, radius=5, amount=2):
-        data = unsharp_mask(data, radius=5, amount=amount)
+    def sharpen_aug(self, data, amount=3):
+        data = unsharp_mask(data, amount=amount)
         return np.float32(data)
 
     def entropy_aug(self, data, radius=13):
