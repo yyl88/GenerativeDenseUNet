@@ -36,7 +36,7 @@ class Fit():
     def _fit(self):
         lr_reduced = False
         lr = 0.001
-        thresh_hold = 0.89
+        thresh_hold = 0.88
         
         for i in range(self.epoch):
             t_acc = self.train_data_iterator()
@@ -46,7 +46,7 @@ class Fit():
             print('epoch %d: train_acc = %f: val_acc_softmax = %f: val_acc_bayes = %f' % (i, t_acc*100, v_acc*100, b_acc*100))
 
             if b_acc > thresh_hold and not lr_reduced:
-                thresh_hold += 0.03
+                thresh_hold += 0.06
                 lr_reduced = True
 
                 lr = 0.0006

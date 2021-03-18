@@ -92,7 +92,7 @@ class up_block(nn.HybridBlock):
                 nn.Conv2DTranspose(growth_rate, kernel_size=3, strides=1, use_bias=False),
             )
 
-            self.drop = nn.Dropout(0.2)
+            #self.drop = nn.Dropout(0.2)
 
             self.dense = make_dense_block(channels, 1, growth_rate, dropout)
 
@@ -103,7 +103,7 @@ class up_block(nn.HybridBlock):
         x = F.Crop(*[x,s], center_crop=True)
         x = F.concat(s, x, dim=1)
 
-        x = self.dense(self.drop(x))
+        x = self.dense(x)
         return x
 
 # Helper functions to build DenseNet backbone layers

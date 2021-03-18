@@ -41,17 +41,17 @@ class JoelsSegNet(gluon.Block):
                                                     kernel_size=9, 
                                                     strides=4, 
                                                     use_bias=False)
-            
-            #self.RbfBlock = LocalLinearBlock(6, 4)
-            #self.RbfBlock = RbfBlock(6, 4, mu_init=mx.init.Xavier(magnitude=1))
             self.RbfBlock = CosRbfBlock(6, 4)
+            #self.RbfBlock = LocalLinearBlock(6, 4)
+            #self.RbfBlock = RbfBlock(12, 3, mu_init=mx.init.Xavier(magnitude=1), priors=False)
+            #self.KdeBlock = CustomLinearBlock(6, 12)
             
             self.BatchNormBlock_0 = nn.BatchNorm()
-            self.BatchNormBlock = nn.BatchNorm()
+            self.BatchNormBlock_1 = nn.BatchNorm()
 
     def forward(self, x):
         x = self.rbf_output(x)
-        x = self.BatchNormBlock(x)
+        x = self.BatchNormBlock_1(x)
         return x
 
     def embeddings(self, x): 
@@ -67,6 +67,7 @@ class JoelsSegNet(gluon.Block):
         x = self.embeddings(x)
         x = self.BatchNormBlock_0(x)
         x = self.RbfBlock(x)
+        #x = self.KdeBlock(x)
         return x
 
     def calculate_probabilities(self, x):
@@ -81,8 +82,8 @@ class JoelsSegNet(gluon.Block):
 
     def bayes_error_rate(self, x):
         probability = self.posterior(x)
-        error = 1 - F.max(probability, axis=1)
-        return error
+        maximum_prob = F.max(probability, axis=1)
+        return maximum_prob
 
 #--------------------------------------------------------------------------------------------------
 
@@ -127,7 +128,7 @@ log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6)
 
 #--------------------------------------------------------------------------------------------------
 
-train_data = np_datasets.create_gluon_loader(np_datasets.training, batch_transforms=True, shuffle=True)
+train_data = np_datasets.create_gluon_loader(np_datasets.training, plane=0, aug_transforms=False, shuffle=True)
 val_data = np_datasets.create_gluon_loader(np_datasets.validation)
 test_data = np_datasets.create_gluon_loader(np_datasets.testing)
 
@@ -162,7 +163,7 @@ fig = px.imshow(np.argmax(prediction[0], axis=0).T, color_continuous_scale='jet'
 fig.show()
 
 
-denoised_img = modal( (np.argmax(prediction[0], axis=0).T), disk(3))
+denoised_img = modal( (np.argmax(prediction[0], axis=0).T), disk(6))
 
 fig = px.imshow(denoised_img, color_continuous_scale='jet')
 fig.show()
