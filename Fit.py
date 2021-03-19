@@ -46,7 +46,7 @@ class Fit():
             print('epoch %d: train_acc = %f: val_acc_softmax = %f: val_acc_bayes = %f' % (i, t_acc*100, v_acc*100, b_acc*100))
 
             if b_acc > thresh_hold and not lr_reduced:
-                thresh_hold += 0.06
+                thresh_hold += 0.03
                 lr_reduced = True
 
                 lr = 0.0006

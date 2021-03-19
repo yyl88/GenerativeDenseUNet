@@ -33,8 +33,8 @@ class JoelsSegNet(gluon.Block):
                         nn.Activation('relu'),
                         nn.MaxPool2D(pool_size=3, strides=2, padding=1))
 
-            self.DenseUNetBlock = DenseUNet(block_config=[2, 4, 8, 16], 
-                                            growth_rate=[4, 8, 16, 32], 
+            self.DenseUNetBlock = DenseUNet(block_config=[2 , 4, 8, 16], 
+                                            growth_rate=[5, 8, 16, 32], 
                                             dropout=0)
 
             self.ConvTranspose = nn.Conv2DTranspose(channels=4, 
@@ -48,6 +48,8 @@ class JoelsSegNet(gluon.Block):
             
             self.BatchNormBlock_0 = nn.BatchNorm()
             self.BatchNormBlock_1 = nn.BatchNorm()
+            self.drop = nn.Dropout(0.6)
+
 
     def forward(self, x):
         x = self.rbf_output(x)
@@ -59,7 +61,7 @@ class JoelsSegNet(gluon.Block):
         x1 = self.DenseUNetBlock(x0)
         x2 = F.concat(x0, x1, dim=1)
 
-        x3 = self.ConvTranspose(x2)
+        x3 = self.ConvTranspose(self.drop(x2))
         x4 = nd.Crop(*[x3,x], center_crop=True) 
         return x4
 
@@ -103,9 +105,8 @@ def plot_xample(xLine):
     fig = px.imshow(xLine, color_continuous_scale='cividis')
     fig.show()
 
-sample_slice = get_sample()
-plot_xample(sample_slice)
-#import pdb; pdb.set_trace()
+#sample_slice = get_sample()
+#plot_xample(sample_slice)
 
 #--------------------------------------------------------------------------------------------------
 
@@ -128,7 +129,7 @@ log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6)
 
 #--------------------------------------------------------------------------------------------------
 
-train_data = np_datasets.create_gluon_loader(np_datasets.training, plane=0, aug_transforms=False, shuffle=True)
+train_data = np_datasets.create_gluon_loader(np_datasets.training, plane=2, aug_transforms=False, shuffle=True)
 val_data = np_datasets.create_gluon_loader(np_datasets.validation)
 test_data = np_datasets.create_gluon_loader(np_datasets.testing)
 

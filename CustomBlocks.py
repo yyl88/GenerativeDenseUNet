@@ -77,7 +77,7 @@ class CosRbfBlock(nn.Block):
     def forward(self, x):
         likelihood = self.rbf_block(x)
         cos_kernel = self.cos_kernel(x.swapaxes(1,3), self.rbf_block.mu.data())
-        cos_kernel = self._sigmoid(cos_kernel).swapaxes(1,3)
+        cos_kernel = F.softmax(cos_kernel, axis=3).swapaxes(1,3)
         return cos_kernel * likelihood
 
 class LocalLinearBlock(nn.Block):
@@ -219,4 +219,4 @@ class LogCoshDiceLoss(Loss):
 
         #logits = F.log_softmax(pred, axis=self._axis) #* (1 - F.softmax(pred, axis=self._axis))**2
         #softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits * weight, one_hot)
-        return 2*log_cosh_diceloss #+ softmax_cross_entropy_loss
+        return log_cosh_diceloss #+ softmax_cross_entropy_loss
