@@ -77,7 +77,7 @@ class CosRbfBlock(nn.Block):
     def forward(self, x):
         likelihood = self.rbf_block(x)
         cos_kernel = self.cos_kernel(x.swapaxes(1,3), self.rbf_block.mu.data())
-        cos_kernel = self._sigmoid(cos_kernel).swapaxes(1,3)
+        cos_kernel = F.softmax(cos_kernel, axis=3).swapaxes(1,3)
         return cos_kernel * likelihood
 
 class LocalLinearBlock(nn.Block):
@@ -89,7 +89,6 @@ class LocalLinearBlock(nn.Block):
             self.bias = self.params.get('bias', shape=(units, ), init=mx.init.One())
 
             self.rbf_block = RbfBlock(units, in_units, mu_init=mu_init, kernel=kernel, norm=norm, priors=False)
-            #self.rbf_block = CosRbfBlock(units, in_units)
 
     def get_mu(self):
         return self.rbf_block.mu.data().asnumpy()
@@ -109,6 +108,20 @@ class LocalLinearBlock(nn.Block):
         x = x + self.bias.data()
         return x.swapaxes(1,3) * rbf
 
+class CustomLinearBlock(nn.Block):
+    def __init__(self, units, in_units, **kwargs):
+        super(CustomLinearBlock, self).__init__(**kwargs)
+        with self.name_scope():
+            self.weight = self.params.get('weight', shape=(units, in_units), init=mx.init.Xavier(magnitude=2.24))
+            self.bias = self.params.get('bias', shape=(units, ), init=mx.init.One())
+
+    def forward(self, x):
+        x = x.swapaxes(1,3)
+
+        x = F.sum(F.expand_dims(x, axis=3) * F.softmax(self.weight.data(), axis=1), axis=4) + self.bias.data()
+
+        return x.swapaxes(1,3)
+
 class ChiSquaredKernel(nn.Block):
     def __init__(self, **kwargs):
         super(ChiSquaredKernel, self).__init__(**kwargs)
@@ -123,8 +136,8 @@ class CosKernelBlock(nn.Block):
         super(CosKernelBlock, self).__init__(**kwargs)
 
     def forward(self, x, mu):
-        cos_kernel = (F.sum(F.expand_dims(x, axis=3) * mu ** 2, axis=4)) \
-            / (F.sqrt((F.expand_dims(F.sum(x**2, axis=3), axis=3))) *F.sqrt(F.sum(mu ** 2, axis=1)))
+        cos_kernel = ( F.sum(F.expand_dims(x, axis=3) * mu, axis=4) ) \
+            / (F.sqrt((F.expand_dims(F.sum(x**2, axis=3), axis=3))) * F.sqrt(F.sum(mu ** 2, axis=1)))
         return cos_kernel
 
 class TriWeightKernelBlock(nn.Block):
@@ -183,7 +196,7 @@ class LogCoshDiceLoss(Loss):
     """
     def __init__(self, num_classes, axis=1, weight=None, batch_axis=0, **kwargs):
         super(LogCoshDiceLoss, self).__init__(weight, batch_axis, **kwargs)
-        self.softmax_cross_entropy_loss = gluon.loss.SoftmaxCELoss(axis=axis, from_logits=True, sparse_label=False, weight=0.1)
+        #self.softmax_cross_entropy_loss = gluon.loss.SoftmaxCELoss(axis=axis, from_logits=True, sparse_label=False, weight=0.15)
         self._num_classes = num_classes
         self._axis = axis
 
@@ -198,7 +211,7 @@ class LogCoshDiceLoss(Loss):
         return F.log(F.cosh(1-score))
 
     def hybrid_forward(self, F, pred, label):
-        weight = F.Cast(label + 1, np.float32)
+        weight = F.Cast(label + 1, np.float32)/6
         one_hot = F.one_hot(label, self._num_classes).swapaxes(1, 4)
         one_hot = F.squeeze(one_hot, axis=4)
 
@@ -206,5 +219,4 @@ class LogCoshDiceLoss(Loss):
 
         #logits = F.log_softmax(pred, axis=self._axis) #* (1 - F.softmax(pred, axis=self._axis))**2
         #softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits * weight, one_hot)
-        return 2*log_cosh_diceloss #+ softmax_cross_entropy_loss
-
+        return log_cosh_diceloss #+ softmax_cross_entropy_loss

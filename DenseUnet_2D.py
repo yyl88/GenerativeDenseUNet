@@ -23,29 +23,28 @@ class DenseUNet(nn.HybridBlock):
             
             self.d1 = nn.HybridSequential()
             self.d1.add(
-                make_dense_block(num_layers=block_config[0], bn_size=1, growth_rate=growth_rate[0], dropout=dropout),
+                make_dense_block(num_layers=block_config[0], bn_size=4, growth_rate=growth_rate[0], dropout=dropout),
                 make_transition(growth_rate[0]), 
             )
                         
             self.d2 = nn.HybridSequential()
             self.d2.add(
-                make_dense_block(num_layers=block_config[1], bn_size=1, growth_rate=growth_rate[1], dropout=dropout), 
+                make_dense_block(num_layers=block_config[1], bn_size=4, growth_rate=growth_rate[1], dropout=dropout), 
                 make_transition(growth_rate[1]),
             )
             
             self.d3 = nn.HybridSequential()
             self.d3.add(
-                make_dense_block(num_layers=block_config[2], bn_size=1, growth_rate=growth_rate[2], dropout=dropout), 
+                make_dense_block(num_layers=block_config[2], bn_size=4, growth_rate=growth_rate[2], dropout=dropout), 
                 make_transition(growth_rate[2]),
             )
             
             self.d4 = nn.HybridSequential()
             self.d4.add(
-                make_dense_block(num_layers=block_config[3], bn_size=1, growth_rate=growth_rate[3], dropout=dropout), 
+                make_dense_block(num_layers=block_config[3], bn_size=4, growth_rate=growth_rate[3], dropout=dropout), 
                 make_transition(growth_rate[3]),
             )
 
-            #self.f4 = nn.Conv2D(1, kernel_size=3, padding=1, activation="relu")
             self.f3 = nn.Conv2D(1, kernel_size=1, padding=0, use_bias=False)
             self.f2 = nn.Conv2D(1, kernel_size=1, padding=0, use_bias=False)
             self.f1 = nn.Conv2D(1, kernel_size=1, padding=0, use_bias=False)
@@ -66,9 +65,6 @@ class DenseUNet(nn.HybridBlock):
         y2 = self.u2(y3,x1)
         y = self.u1(y2,x)
         
-        #y4 = F.UpSampling(self.f4(x4), sample_type="nearest", scale=21)
-        #y4 = F.Crop(*[y4,x], center_crop=True)
-
         y3 = F.UpSampling(self.f3(y4), sample_type="nearest", scale=9)
         y3 = F.Crop(*[y3,x], center_crop=True)
 
@@ -92,9 +88,7 @@ class up_block(nn.HybridBlock):
                 nn.Conv2DTranspose(growth_rate, kernel_size=3, strides=1, use_bias=False),
             )
 
-            self.drop = nn.Dropout(0.2)
-
-            self.dense = make_dense_block(channels, 1, growth_rate, dropout)
+            self.dense = make_dense_block(channels, 4, growth_rate, dropout)
 
     def hybrid_forward(self, F, x, s):
         x = self.transition_up(x)
@@ -103,7 +97,7 @@ class up_block(nn.HybridBlock):
         x = F.Crop(*[x,s], center_crop=True)
         x = F.concat(s, x, dim=1)
 
-        x = self.dense(self.drop(x))
+        x = self.dense(x)
         return x
 
 # Helper functions to build DenseNet backbone layers
@@ -128,7 +122,6 @@ def make_dense_layer(growth_rate, bn_size, dropout):
     out = HybridConcurrent(axis=1)
     out.add(Identity())
     out.add(new_features)
-
     return out
 
 def make_transition(num_output_features):

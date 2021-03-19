@@ -36,7 +36,7 @@ class Fit():
     def _fit(self):
         lr_reduced = False
         lr = 0.001
-        thresh_hold = 0.89
+        thresh_hold = 0.88
         
         for i in range(self.epoch):
             t_acc = self.train_data_iterator()
