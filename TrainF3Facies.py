@@ -48,7 +48,7 @@ class JoelsSegNet(gluon.Block):
             
             self.BatchNormBlock_0 = nn.BatchNorm()
             self.BatchNormBlock_1 = nn.BatchNorm()
-            self.drop = nn.Dropout(0.6)
+            self.DropoutBlock = nn.Dropout(0.6)
 
 
     def forward(self, x):
@@ -61,7 +61,7 @@ class JoelsSegNet(gluon.Block):
         x1 = self.DenseUNetBlock(x0)
         x2 = F.concat(x0, x1, dim=1)
 
-        x3 = self.ConvTranspose(self.drop(x2))
+        x3 = self.ConvTranspose(self.DropoutBlock(x2))
         x4 = nd.Crop(*[x3,x], center_crop=True) 
         return x4
 
@@ -129,7 +129,7 @@ log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6)
 
 #--------------------------------------------------------------------------------------------------
 
-train_data = np_datasets.create_gluon_loader(np_datasets.training, plane=2, aug_transforms=False, shuffle=True)
+train_data = np_datasets.create_gluon_loader(np_datasets.training, plane=0, aug_transforms=False, shuffle=True)
 val_data = np_datasets.create_gluon_loader(np_datasets.validation)
 test_data = np_datasets.create_gluon_loader(np_datasets.testing)
 
