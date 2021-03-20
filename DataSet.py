@@ -121,21 +121,21 @@ class LoadSeismicNumpyFiles():
         data = nd.array(data)
         label = nd.array(label)
         
-        spacial_augs = [mx.image.HorizontalFlipAug(0.2)]
+        spacial_augs = [mx.image.HorizontalFlipAug(0.36)]
 
         for aug in spacial_augs:
             data= aug(data)
             label = aug(label)
 
-        color_augs = [#mx.image.ContrastJitterAug(0.9),
-                      mx.image.BrightnessJitterAug(0.7),
-                      mx.image.SaturationJitterAug(0.5),
-                      #mx.image.HueJitterAug(0.3),
-                      mx.image.ColorJitterAug(0.2, 0.6, 0.223)]
+        #color_augs = [#mx.image.ContrastJitterAug(0.9),
+        #              mx.image.BrightnessJitterAug(0.7),
+        #              mx.image.SaturationJitterAug(0.5),
+        #              #mx.image.HueJitterAug(0.3),
+        #              mx.image.ColorJitterAug(0.2, 0.6, 0.223)]
 
 
-        data = data.swapaxes(0,2)
-        for aug in color_augs:
-            data = aug(data)
+        #data = data.swapaxes(0,2)
+        #for aug in color_augs:
+        #    data = aug(data)
 
-        return data.swapaxes(0,2), label
+        return data, label

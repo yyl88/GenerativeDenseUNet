@@ -129,7 +129,7 @@ log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6)
 
 #--------------------------------------------------------------------------------------------------
 
-train_data = np_datasets.create_gluon_loader(np_datasets.training, plane=0, aug_transforms=False, shuffle=True)
+train_data = np_datasets.create_gluon_loader(np_datasets.training, plane=0, aug_transforms=True, shuffle=True)
 val_data = np_datasets.create_gluon_loader(np_datasets.validation)
 test_data = np_datasets.create_gluon_loader(np_datasets.testing)
 
