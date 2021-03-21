@@ -77,6 +77,7 @@ class DenseUNet(nn.HybridBlock):
         y = F.concat(y, y1, y2, y3, dim=1)
         return y
 
+# Helper functions to build DenseNet backbone layers
 class up_block(nn.HybridBlock):
     def __init__(self, channels, growth_rate, dropout, **kwargs):
         super(up_block, self).__init__(**kwargs)
@@ -100,7 +101,6 @@ class up_block(nn.HybridBlock):
         x = self.dense(x)
         return x
 
-# Helper functions to build DenseNet backbone layers
 def make_dense_block(num_layers, bn_size, growth_rate, dropout):
     out = nn.HybridSequential()
     for _ in range(num_layers):

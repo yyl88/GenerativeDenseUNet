@@ -113,12 +113,12 @@ class CustomLinearBlock(nn.Block):
         super(CustomLinearBlock, self).__init__(**kwargs)
         with self.name_scope():
             self.weight = self.params.get('weight', shape=(units, in_units), init=mx.init.Xavier(magnitude=2.24))
-            self.bias = self.params.get('bias', shape=(units, ), init=mx.init.One())
+            #self.bias = self.params.get('bias', shape=(units, ), init=mx.init.One())
 
     def forward(self, x):
         x = x.swapaxes(1,3)
 
-        x = F.sum(F.expand_dims(x, axis=3) * F.softmax(self.weight.data(), axis=1), axis=4) + self.bias.data()
+        x = F.sum(F.expand_dims(x, axis=3) * F.softmax(self.weight.data(), axis=1), axis=4) #+ self.bias.data()
 
         return x.swapaxes(1,3)
 
@@ -217,6 +217,7 @@ class LogCoshDiceLoss(Loss):
 
         log_cosh_diceloss = self.log_cosh_diceloss(F, pred, one_hot, weight)
 
-        #logits = F.log_softmax(pred, axis=self._axis) #* (1 - F.softmax(pred, axis=self._axis))**2
+        #logits = F.log_softmax(pred, axis=self._axis)
+        #logits = F.log_softmax(1 - F.softmax(pred, axis=self._axis))
         #softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits * weight, one_hot)
         return log_cosh_diceloss #+ softmax_cross_entropy_loss

@@ -16,6 +16,7 @@ from DataSet import *
 from DenseUnet_2D import DenseUNet
 from CustomBlocks import *
 from Fit import *
+from Visualizations import *
 import time
 
 #--------------------------------------------------------------------------------------------------
@@ -43,12 +44,12 @@ class JoelsSegNet(gluon.Block):
                                                     use_bias=False)
             self.RbfBlock = CosRbfBlock(6, 4)
             #self.RbfBlock = LocalLinearBlock(6, 4)
-            #self.RbfBlock = RbfBlock(12, 3, mu_init=mx.init.Xavier(magnitude=1), priors=False)
+            #self.RbfBlock = RbfBlock(12, 4, mu_init=mx.init.Xavier(magnitude=1), priors=False)
             #self.KdeBlock = CustomLinearBlock(6, 12)
             
             self.BatchNormBlock_0 = nn.BatchNorm()
             self.BatchNormBlock_1 = nn.BatchNorm()
-            self.DropoutBlock = nn.Dropout(0.6)
+            self.DropoutBlock = nn.Dropout(0.4)
 
 
     def forward(self, x):
@@ -172,49 +173,13 @@ fig.show()
 #--------------------------------------------------------------------------------------------------
 
 mu, gamma = net.RbfBlock.get_rbf_kernel_stats()
-
-fig = px.scatter_3d(x=mu[:,0], y=mu[:,1], z=mu[:,2], opacity=0.8, color=gamma, color_continuous_scale='jet')
-fig.update_layout(template="plotly_dark", title="Rbf nodes")
-fig.show()
-
-#--------------------------------------------------------------------------------------------------
-
 code, labels = training_instance.latent_space()
 
-fig = go.Figure()
-fig.add_trace( 
-    go.Scatter3d(
-        x=code[0,0,:,:].flatten(),
-        y=code[0,1,:,:].flatten(), 
-        z=code[0,2,:,:].flatten(),
-        name='class',
-        mode='markers',
-        marker=dict(
-            size=0.9, 
-            color=labels[0].flatten(),
-            colorscale='jet'
-        ) 
-    )
-)
+plot_rbfcenters_embeddings(code, labels, mu, gamma)
 
-fig.add_trace(
-    go.Scatter3d(
-        x=mu[:,0],
-        y=mu[:,1], 
-        z=mu[:,2],
-        name='centers',
-        mode='markers',
-        marker=dict(
-            color=gamma,
-            opacity=1,
-            colorscale='jet'
-        ) 
-    )
-)
-
-fig.update_layout(template="plotly_dark", title="Embeddings and Rbf nodes")
-
-fig.show()
+plot_validation_vs_training_accuracy(60, training_instance.train_acc_softmax, 
+                                         training_instance.val_acc_softmax,
+                                         training_instance.val_acc_bayes)
 
 #--------------------------------------------------------------------------------------------------
 
