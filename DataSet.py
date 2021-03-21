@@ -91,11 +91,11 @@ class LoadSeismicNumpyFiles():
             return data.swapaxes(0,1), label.swapaxes(0,1)
 
     def random_noise_aug(self, data):
-        sigma = 0.123
+        sigma = 0.223
         data = random_noise(data, var=sigma**2)
         return np.float32(data)
 
-    def sharpen_aug(self, data, amount=3):
+    def sharpen_aug(self, data, amount=16):
         data = unsharp_mask(data, amount=amount)
         return np.float32(data)
 
@@ -117,25 +117,40 @@ class LoadSeismicNumpyFiles():
         return np.float32(data)
 
     def aug_transform(self, data, label):
-        # augment images using mx.image augmentators
+        """
+        augs_list = [self.sharpen_aug, 
+                     self.random_noise_aug]
+
+        for aug in augs_list:
+            data = aug(data)
+        """
         data = nd.array(data)
         label = nd.array(label)
-        
-        spacial_augs = [mx.image.HorizontalFlipAug(0.36)]
 
-        for aug in spacial_augs:
+        #data, label = self.spatial_augmentations(data, label)
+        data = self.color_augmentations(data)
+        return data, label
+
+    def spatial_augmentations(self, data, label):
+        # augment images using mx.image augmentators
+        spatial_augs = [mx.image.HorizontalFlipAug(0.36)]
+         
+        for aug in spatial_augs:
             data= aug(data)
             label = aug(label)
 
-        #color_augs = [#mx.image.ContrastJitterAug(0.9),
-        #              mx.image.BrightnessJitterAug(0.7),
-        #              mx.image.SaturationJitterAug(0.5),
-        #              #mx.image.HueJitterAug(0.3),
-        #              mx.image.ColorJitterAug(0.2, 0.6, 0.223)]
-
-
-        #data = data.swapaxes(0,2)
-        #for aug in color_augs:
-        #    data = aug(data)
-
         return data, label
+
+    def color_augmentations(self, data):
+        # augment images using mx.image augmentators
+        color_augs = [#mx.image.ContrastJitterAug(0.9),
+                      mx.image.BrightnessJitterAug(0.36),
+                      mx.image.SaturationJitterAug(0.36),
+                      #mx.image.HueJitterAug(0.3),
+                      mx.image.ColorJitterAug(0.36, 0.36, 0.36)]
+
+        data = data.swapaxes(0,2)
+        for aug in color_augs:
+            data = aug(data)
+
+        return data.swapaxes(0,2)

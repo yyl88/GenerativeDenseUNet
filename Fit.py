@@ -28,28 +28,33 @@ class Fit():
         self.train_data = train_data
         self.val_data = val_data
 
-        self.train_acc = []
-        self.val_acc = []
+        self.train_acc_softmax = []
+        self.val_acc_bayes = []
+        self.val_acc_softmax = []
 
         self._fit()
 
     def _fit(self):
         lr_reduced = False
         lr = 0.001
-        thresh_hold = 0.88
+        thresh_hold = 0.87
         
         for i in range(self.epoch):
             t_acc = self.train_data_iterator()
-            v_acc = self.val_data_iterator()
-            b_acc = self.val_data_iterator(bayes=True)
-    
-            print('epoch %d: train_acc = %f: val_acc_softmax = %f: val_acc_bayes = %f' % (i, t_acc*100, v_acc*100, b_acc*100))
+            v_sf_acc = self.val_data_iterator()
+            v_by_acc = self.val_data_iterator(bayes=True)
+            
+            self.train_acc_softmax.append(t_acc)
+            self.val_acc_softmax.append(v_sf_acc)
+            self.val_acc_bayes.append(v_by_acc)
 
-            if b_acc > thresh_hold and not lr_reduced:
-                thresh_hold += 0.03
+            print('epoch %d: train_acc = %f: val_acc_softmax = %f: val_acc_bayes = %f' % (i, t_acc*100, v_sf_acc*100, v_by_acc*100))
+
+            if v_by_acc > thresh_hold and not lr_reduced:
+                #thresh_hold += 0.03
                 lr_reduced = True
-
-                lr = 0.0006
+                
+                lr = 0.0001
                 self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
                 print("learning rate reduced")
 
@@ -102,7 +107,6 @@ class Fit():
             self.metric.update(label_batch[0], output)
 
         name, v_acc = self.metric.get()
-        self.val_acc.append(v_acc)
 
         # Reset evaluation result to initial state.
         self.metric.reset()
@@ -143,7 +147,6 @@ class Fit():
         
         # Gets the evaluation result.
         name, t_acc = self.metric.get()
-        self.train_acc.append(t_acc)
         
         # Reset evaluation result to initial state.
         self.metric.reset()
