@@ -12,7 +12,11 @@ Papers: "Densely Connected Convolutional Networks",
 "A Novel Kernel for RBF Based Neural Networks",
 "Kernel Bayes’ Rule: Bayesian Inference with Positive
 Definite Kernels",
-"A survey of loss functions for semantic segmentation".
+"A survey of loss functions for semantic segmentation",
+"RBF-Softmax: Learning Deep Representative
+Prototypes with Radial Basis Function Softmax.",
+"Cosine meets Softmax: A tough-to-beat baseline
+for visual grounding".
 
 https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.77.1134&rep=rep1&type=pdf
 
@@ -30,6 +34,10 @@ https://arxiv.org/pdf/1811.00410.pdf
 
 https://openaccess.thecvf.com/content_cvpr_2018/papers/Huang_CondenseNet_An_Efficient_CVPR_2018_paper.pdf
 
+https://arxiv.org/pdf/2009.06066.pdf
+
 https://arxiv.org/pdf/1905.12200.pdf
+
+https://www.ecva.net/papers/eccv_2020/papers_ECCV/papers/123710290.pdf
 
 https://arxiv.org/pdf/2004.13912.pdf
