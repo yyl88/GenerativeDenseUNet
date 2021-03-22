@@ -77,7 +77,7 @@ class CosRbfBlock(nn.Block):
     def forward(self, x):
         likelihood = self.rbf_block(x)
         cos_kernel = self.cos_kernel(x.swapaxes(1,3), self.rbf_block.mu.data())
-        cos_kernel = F.softmax(cos_kernel, axis=3).swapaxes(1,3)
+        cos_kernel = F.softmax(cos_kernel*10, axis=3).swapaxes(1,3)
         return cos_kernel * likelihood
 
 class LocalLinearBlock(nn.Block):
