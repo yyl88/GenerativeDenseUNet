@@ -6,6 +6,8 @@ An RBF based artificial neural network used for the purpose of semantic image se
 The dataset used for training and validation can be found in this repo: https://github.com/yalaudah/facies_classification_benchmark
 I was inspired by this repo which is worth looking into: https://github.com/microsoft/seismic-deeplearning
 
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/latentspace_vs_model_output.jpg)
+
 Papers: "Densely Connected Convolutional Networks",
 "U-Net: Convolutional Networks for Biomedical Image Segmentation", 
 "A Probabilistic RBF Network for Classification", 
