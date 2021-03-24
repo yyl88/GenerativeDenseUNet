@@ -13,6 +13,8 @@ There is some commented code, these are ongoing experiments I am conducing with 
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/latentspace_vs_model_output.jpg)
 Left: 4D vectors (latent space/embeddings) that are fed into the RBF layer. Right: Corresponding model output. Each pixel here corresponds to a 4D vector in the tetrahedron on the left. Both are color coded by label. For a nice introduction to ternary/tetrahedron plots, check out this awesome blog: https://www.cyentia.com/ternary-plots-for-visualizing-3d-data/
 
+TODO: Calculate segmentation metrics. 
+
 Papers: "Densely Connected Convolutional Networks",
 "U-Net: Convolutional Networks for Biomedical Image Segmentation", 
 "A Probabilistic RBF Network for Classification", 
