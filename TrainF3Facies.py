@@ -31,47 +31,47 @@ class JoelsSegNet(gluon.Block):
         with self.name_scope():
             self.d0 = nn.HybridSequential()
             self.d0.add(nn.Conv2D(6, kernel_size=7, strides=2, use_bias=False),
-                        nn.Activation('relu'),
-                        nn.MaxPool2D(pool_size=3, strides=2, padding=1))
+                        nn.BatchNorm(),
+                        nn.Swish(),
+                        nn.MaxPool2D(pool_size=3, strides=2, padding=1)
+                        )
 
-            self.DenseUNetBlock = DenseUNet(block_config=[2 , 4, 8, 16], 
-                                            growth_rate=[5, 8, 16, 32], 
+            self.DenseUNetBlock = DenseUNet(block_config=[6, 4, 8, 16], 
+                                            growth_rate=[4, 8, 16, 32], 
                                             dropout=0)
-
+            
             self.ConvTranspose = nn.Conv2DTranspose(channels=4, 
                                                     kernel_size=9, 
                                                     strides=4, 
-                                                    use_bias=False)
-            self.RbfBlock = CosRbfBlock(6, 4)
-            #self.RbfBlock = LocalLinearBlock(6, 4)
-            #self.RbfBlock = RbfBlock(12, 4, mu_init=mx.init.Xavier(magnitude=1), priors=False)
-            #self.KdeBlock = CustomLinearBlock(6, 12)
-            
-            self.BatchNormBlock_0 = nn.BatchNorm()
-            self.BatchNormBlock_1 = nn.BatchNorm()
-            self.DropoutBlock = nn.Dropout(0.4)
+                                                    activation='tanh')
 
+            self.kdeBlock = nn.Sequential()
+            self.kdeBlock.add(RbfBlock(3, 4, priors=False),
+                              CustomLinearBlock(1, 3)
+                              )
+
+            self.BatchNormBlock_0 = nn.BatchNorm()
+            self.RbfBlock = CosRbfBlock(6, 4)
+            self.BatchNormBlock_1 = nn.BatchNorm()
 
     def forward(self, x):
-        x = self.rbf_output(x)
+        x, s = self.rbf_output(x)
         x = self.BatchNormBlock_1(x)
-        return x
+        return x, s
 
     def embeddings(self, x): 
         x0 = self.d0(x)
         x1 = self.DenseUNetBlock(x0)
         x2 = F.concat(x0, x1, dim=1)
 
-        x3 = self.ConvTranspose(self.DropoutBlock(x2))
+        x3 = self.ConvTranspose(x2)
         x4 = nd.Crop(*[x3,x], center_crop=True) 
-        return x4
+        return self.BatchNormBlock_0(x4), self.kdeBlock(x4)
 
     def rbf_output(self, x):
-        x = self.embeddings(x)
-        x = self.BatchNormBlock_0(x)
+        x, s = self.embeddings(x)
         x = self.RbfBlock(x)
-        #x = self.KdeBlock(x)
-        return x
+        return x, s
 
     def calculate_probabilities(self, x):
         evidence = F.expand_dims(F.sum(x, axis=1), axis=1)
@@ -79,12 +79,12 @@ class JoelsSegNet(gluon.Block):
         return posterior        
 
     def posterior(self, x):
-        x = self.rbf_output(x)
+        x, s = self.rbf_output(x)
         x = self.calculate_probabilities(x)
-        return x
+        return x, s
 
     def bayes_error_rate(self, x):
-        probability = self.posterior(x)
+        probability, s = self.posterior(x)
         maximum_prob = F.max(probability, axis=1)
         return maximum_prob
 
@@ -117,7 +117,7 @@ net = JoelsSegNet()
 # set the context on GPU is available otherwise CPU
 ctx = [mx.gpu() if mx.test_utils.list_gpus() else mx.cpu()]
 
-#net.load_parameters("DenseRBFUNet_1", ctx)
+net.load_parameters("DenseRbfUnet_0", ctx)
 
 net.initialize(mx.init.Xavier(magnitude=2.24), ctx=ctx)
 net.hybridize()
@@ -131,7 +131,7 @@ log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6)
 #--------------------------------------------------------------------------------------------------
 
 train_data = np_datasets.create_gluon_loader(np_datasets.training, plane=0, aug_transforms=True, shuffle=True)
-val_data = np_datasets.create_gluon_loader(np_datasets.validation)
+val_data = np_datasets.create_gluon_loader(np_datasets.validation, plane=0)
 test_data = np_datasets.create_gluon_loader(np_datasets.testing)
 
 """
@@ -149,7 +149,7 @@ print("%s seconds" % (start-stop))
 
 #--------------------------------------------------------------------------------------------------
 
-label, prediction = training_instance.val_data_iterator(inference=True)
+label, prediction, synthetic = training_instance.val_data_iterator(inference=True, bayes=False)
 prediction = prediction.asnumpy()
 
 fig = px.imshow(np_datasets.training['label'][0].T, color_continuous_scale='jet')
@@ -164,8 +164,11 @@ fig.show()
 fig = px.imshow(np.argmax(prediction[0], axis=0).T, color_continuous_scale='jet')
 fig.show()
 
+fig = px.imshow(synthetic[0][0].T, color_continuous_scale='cividis')
+fig.show()
 
-denoised_img = modal( (np.argmax(prediction[0], axis=0).T), disk(6))
+denoised_img = modal( (np.argmax(prediction[0], axis=0).T), disk(3))
+denoised_img = modal(denoised_img, disk(3))
 
 fig = px.imshow(denoised_img, color_continuous_scale='jet')
 fig.show()
@@ -181,6 +184,19 @@ plot_validation_vs_training_accuracy(60, training_instance.train_acc_softmax,
                                          training_instance.val_acc_softmax,
                                          training_instance.val_acc_bayes)
 
+
+fig = px.imshow(code[0][0].T, color_continuous_scale='cividis')
+fig.show()
+
+fig = px.imshow(code[0][1].T, color_continuous_scale='cividis')
+fig.show()
+
+fig = px.imshow(code[0][2].T, color_continuous_scale='cividis')
+fig.show()
+
+fig = px.imshow(code[0][3].T, color_continuous_scale='cividis')
+fig.show()
+
 #--------------------------------------------------------------------------------------------------
 
 err = training_instance.error()
@@ -189,4 +205,4 @@ plot_xample(err[0].T)
 
 import pdb; pdb.set_trace()
 
-net.save_parameters("DenseRBFUnet_1")
+net.save_parameters("DenseRbfUnet_0")

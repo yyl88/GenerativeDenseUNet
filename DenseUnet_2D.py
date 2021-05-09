@@ -45,8 +45,8 @@ class DenseUNet(nn.HybridBlock):
                 make_transition(growth_rate[3]),
             )
 
-            self.f3 = nn.Conv2D(1, kernel_size=1, padding=0, use_bias=False)
-            self.f2 = nn.Conv2D(1, kernel_size=1, padding=0, use_bias=False)
+            self.f3 = nn.Conv2D(3, kernel_size=1, padding=0, use_bias=False)
+            self.f2 = nn.Conv2D(2, kernel_size=1, padding=0, use_bias=False)
             self.f1 = nn.Conv2D(1, kernel_size=1, padding=0, use_bias=False)
             
             self.u4 = up_block(block_config[3], growth_rate[3], dropout=dropout)
@@ -85,7 +85,7 @@ class up_block(nn.HybridBlock):
             self.transition_up = nn.HybridSequential()
             self.transition_up.add(
                 nn.BatchNorm(),
-                nn.Activation("relu"),
+                nn.Swish(),
                 nn.Conv2DTranspose(growth_rate, kernel_size=3, strides=1, use_bias=False),
             )
 
@@ -111,9 +111,9 @@ def make_dense_layer(growth_rate, bn_size, dropout):
     new_features = nn.HybridSequential()
     new_features.add(
         nn.BatchNorm(),
-        nn.Activation('relu'),
+        nn.Swish(),
         nn.Conv2D(bn_size * growth_rate, kernel_size=1, use_bias=False),
-        nn.Activation('relu'),
+        nn.Swish(),
         nn.Conv2D(growth_rate, kernel_size=3, padding=1))
     
     if dropout:
@@ -128,7 +128,7 @@ def make_transition(num_output_features):
     out = nn.HybridSequential()
     out.add(
         nn.BatchNorm(),
-        nn.Activation('relu'),
+        nn.Swish(),
         nn.Conv2D(num_output_features, kernel_size=3, padding=1),
         nn.MaxPool2D(pool_size=2, strides=2))
     return out

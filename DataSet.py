@@ -3,6 +3,8 @@ import mxnet as mx
 import mxnet.ndarray as nd
 from mxnet import gluon
 from skimage import filters
+from scipy.fft import fft, dct
+
 from skimage.util import random_noise
 from skimage.filters import unsharp_mask
 from skimage.morphology import disk, cube
@@ -43,10 +45,18 @@ class LoadSeismicNumpyFiles():
         if plane > 0:
             data, label = self._planeswap[plane - 1](data, label)
 
+        #indices = np.indices((701, 255))
+        #inx_1 = np.expand_dims(np.float32(indices[0])/255, axis=0)
+        #inx_0 = np.expand_dims(np.float32(indices[1])/701, axis=0)
+        
+        #index_features = np.repeat(np.expand_dims(np.vstack((inx_0, inx_1)), 0), 401, axis=0)
+
         #sobel = np.expand_dims(self.sobel_aug(data), axis=1)
         
         label = np.expand_dims(label, axis=1)
         data = np.expand_dims(data, axis=1)
+
+        #data = np.vstack((data, index_features.swapaxes(0,1))).swapaxes(0,1)
 
         #data = np.concatenate((sobel, data), axis=1)
         return data, label
@@ -65,7 +75,7 @@ class LoadSeismicNumpyFiles():
         x[x == 2] = 0
         x[x == 10] = 2
 
-    def create_gluon_loader(self, dataset_dic, batch_size=32, plane=0, shuffle=False, aug_transforms=False):
+    def create_gluon_loader(self, dataset_dic, batch_size=16, plane=0, shuffle=False, aug_transforms=False):
         
         dataset_iter = iter(dataset_dic.keys())
         for i in range(0, int(len(dataset_dic)/2)):
@@ -133,7 +143,7 @@ class LoadSeismicNumpyFiles():
 
     def spatial_augmentations(self, data, label):
         # augment images using mx.image augmentators
-        spatial_augs = [mx.image.HorizontalFlipAug(0.36)]
+        spatial_augs = [mx.image.HorizontalFlipAug(0.5)]
          
         for aug in spatial_augs:
             data= aug(data)
@@ -144,10 +154,10 @@ class LoadSeismicNumpyFiles():
     def color_augmentations(self, data):
         # augment images using mx.image augmentators
         color_augs = [#mx.image.ContrastJitterAug(0.9),
-                      mx.image.BrightnessJitterAug(0.36),
-                      mx.image.SaturationJitterAug(0.36),
+                      mx.image.BrightnessJitterAug(0.46),
+                      mx.image.SaturationJitterAug(0.46),
                       #mx.image.HueJitterAug(0.3),
-                      mx.image.ColorJitterAug(0.36, 0.36, 0.36)]
+                      mx.image.ColorJitterAug(0.46, 0.46, 0.46)]
 
         data = data.swapaxes(0,2)
         for aug in color_augs:

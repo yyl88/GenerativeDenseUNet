@@ -37,7 +37,7 @@ class Fit():
     def _fit(self):
         lr_reduced = False
         lr = 0.001
-        thresh_hold = 0.87
+        thresh_hold = 0.88
         
         for i in range(self.epoch):
             t_acc = self.train_data_iterator()
@@ -54,7 +54,7 @@ class Fit():
                 #thresh_hold += 0.03
                 lr_reduced = True
                 
-                lr = 0.0001
+                lr = 0.0006
                 self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
                 print("learning rate reduced")
 
@@ -65,7 +65,7 @@ class Fit():
 
             label_batch = gluon.utils.split_and_load(label, ctx_list=self.ctx, batch_axis=0)
 
-            embeddings = self.net.embeddings(data_batch[0])
+            embeddings, synthetic = self.net.embeddings(data_batch[0])
 
         return nd.softmax(embeddings, axis=1).asnumpy(), label_batch[0].asnumpy()
 
@@ -99,9 +99,9 @@ class Fit():
             label_batch = gluon.utils.split_and_load(label, ctx_list=self.ctx, batch_axis=0)
 
             if not bayes:
-                output = self.net(data_batch[0])
+                output, synthetic = self.net(data_batch[0])
             else:
-                output = self.net.posterior(data_batch[0])
+                output, synthetic = self.net.posterior(data_batch[0])
 
             # Updates internal evaluation
             self.metric.update(label_batch[0], output)
@@ -113,9 +113,9 @@ class Fit():
         
         if inference:
             if bayes:
-                return label.asnumpy(), output
+                return label.asnumpy(), output, synthetic.asnumpy()
             else:
-                return label.asnumpy(), nd.softmax(output, axis=1)
+                return label.asnumpy(), nd.softmax(output, axis=1), synthetic.asnumpy()
         else:
             return v_acc
 
@@ -132,8 +132,8 @@ class Fit():
 
             # Inside training scope
             with ag.record():
-                output = self.net(data_batch[0])
-                loss = self.training_loss(output, label_batch[0])
+                output, synthetic = self.net(data_batch[0])
+                loss = self.training_loss(output, label_batch[0], synthetic, data_batch[0])
                 loss.backward()
 
             assert(output.shape[-2:] == label.shape[-2:])
