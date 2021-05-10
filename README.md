@@ -14,7 +14,8 @@ There is some commented code, these are ongoing experiments I am performing with
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot1.jpg)
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot2.jpg)
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot3.jpg)
-The CNN (DenseUNet) produces 4 feature maps. Then slices along axis 1 (takes a pixel from each feature map) and feeds this 4D vector into the RBF layer.
+The CNN (DenseUNet) produces 4 feature maps. Then slices along axis 1 (takes a pixel from each feature map) and feeds this 4D vector into the RBF layer. 
+This allows the model to remain a fully convolutional neural network. 
 
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot4.jpg)
 The image above is the embedding space (4D points/coordinates for each pixel in the image) as a result of training this model for a few epochs. The CNN (DenseUNet) is tasked with generating feature maps that the RBF layer can correctly bucket into one of the RBF nodes. For a nice introduction to ternary/tetrahedron plots, check out this awesome blog: https://www.cyentia.com/ternary-plots-for-visualizing-3d-data/
