@@ -143,7 +143,7 @@ class LoadSeismicNumpyFiles():
 
     def spatial_augmentations(self, data, label):
         # augment images using mx.image augmentators
-        spatial_augs = [mx.image.HorizontalFlipAug(0.5)]
+        spatial_augs = [mx.image.HorizontalFlipAug(0.15)]
          
         for aug in spatial_augs:
             data= aug(data)

@@ -37,7 +37,7 @@ class Fit():
     def _fit(self):
         lr_reduced = False
         lr = 0.001
-        thresh_hold = 0.88
+        thresh_hold = 0.90
         
         for i in range(self.epoch):
             t_acc = self.train_data_iterator()
@@ -54,7 +54,7 @@ class Fit():
                 #thresh_hold += 0.03
                 lr_reduced = True
                 
-                lr = 0.0006
+                lr = 0.0001
                 self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
                 print("learning rate reduced")
 

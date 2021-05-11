@@ -31,14 +31,14 @@ class JoelsSegNet(gluon.Block):
         with self.name_scope():
             self.d0 = nn.HybridSequential()
             self.d0.add(nn.Conv2D(6, kernel_size=7, strides=2, use_bias=False),
-                        nn.BatchNorm(),
+                        nn.InstanceNorm(),
                         nn.Swish(),
                         nn.MaxPool2D(pool_size=3, strides=2, padding=1)
                         )
 
-            self.DenseUNetBlock = DenseUNet(block_config=[6, 4, 8, 16], 
-                                            growth_rate=[4, 8, 16, 32], 
-                                            dropout=0)
+            self.DenseUNetBlock = DenseUNet(block_config=[6, 8, 32, 64], 
+                                            growth_rate=[8, 12, 12, 12], 
+                                            dropout=0.25)
             
             self.ConvTranspose = nn.Conv2DTranspose(channels=4, 
                                                     kernel_size=9, 
@@ -143,7 +143,7 @@ test_data = np_datasets.create_gluon_loader(np_datasets.testing, batch_size=32, 
 #--------------------------------------------------------------------------------------------------
 
 start = time.time()
-training_instance = Fit(net,ctx, trainer, metric, log_cosh_dice_loss, 60, train_data, val_data)
+training_instance = Fit(net,ctx, trainer, metric, log_cosh_dice_loss, 20, train_data, val_data)
 stop = time.time()
 print("%s seconds" % (start-stop))
 
@@ -180,7 +180,7 @@ code, labels = training_instance.latent_space()
 
 plot_rbfcenters_embeddings(code, labels, mu, gamma)
 
-plot_validation_vs_training_accuracy(60, training_instance.train_acc_softmax, 
+plot_validation_vs_training_accuracy(20, training_instance.train_acc_softmax, 
                                          training_instance.val_acc_softmax,
                                          training_instance.val_acc_bayes)
 
