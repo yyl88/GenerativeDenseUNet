@@ -10,8 +10,24 @@ To run: run TrainF3Seismic.py
 The model is using the MxNet deep learning library, a LogCoshDiceLoss, and plotly for visualizations.
 There is some commented code, these are ongoing experiments I am performing with different variations of RBF such as "local linear models", and combining multiple kernels.
 
-![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/latentspace_vs_model_output.jpg)
-Left: 4D vectors (latent space/embeddings) that are fed into the RBF layer. Right: Corresponding model output. Each pixel here corresponds to a 4D vector in the tetrahedron on the left. Both are color coded by label. For a nice introduction to ternary/tetrahedron plots, check out this awesome blog: https://www.cyentia.com/ternary-plots-for-visualizing-3d-data/
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot0.jpg)
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot1.jpg)
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot2.jpg)
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot3.jpg)
+The CNN (DenseUNet) produces 4 feature maps. Then slices along axis 1 (takes a pixel from each feature map) and feeds this 4D vector into the RBF layer. 
+This allows the model to remain a fully convolutional neural network. 
+
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot4.jpg)
+The image above is the embedding space (4D points/coordinates for each pixel in the image) as a result of training this model for a few epochs. The CNN (DenseUNet) is tasked with generating feature maps that the RBF layer can correctly bucket into one of the RBF nodes. For a nice introduction to ternary/tetrahedron plots, check out this awesome blog: https://www.cyentia.com/ternary-plots-for-visualizing-3d-data/
+
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/181996825_5461193370621018_8800196505991060229_n.jpg)
+Each pixel here corresponds to a 4D point in the tetrahedron (above).
+
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/181936468_5461194637287558_3655243639396744276_n.jpg)
+Bayes Theorem can be used for inferece. This image is showing REAL posterior probabilites for each pixel. 
+
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/183034536_5461193310621024_6251143271430111991_n.jpg)
+Ground truth (compare to model predictions with Bayes inference above). 
 
 TODO: Calculate segmentation metrics. 
 
