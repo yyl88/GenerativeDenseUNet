@@ -29,6 +29,9 @@ Bayes Theorem can be used for inferece. This image is showing REAL posterior pro
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/183034536_5461193310621024_6251143271430111991_n.jpg)
 Ground truth (compare to model predictions with Bayes inference above). 
 
+![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot6.jpg)
+Number of parameters.
+
 TODO: Calculate segmentation metrics. 
 
 Papers: "Densely Connected Convolutional Networks",
