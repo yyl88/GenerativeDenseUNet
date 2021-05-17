@@ -75,7 +75,7 @@ class LoadSeismicNumpyFiles():
         x[x == 2] = 0
         x[x == 10] = 2
 
-    def create_gluon_loader(self, dataset_dic, batch_size=16, plane=0, shuffle=False, aug_transforms=False):
+    def create_gluon_loader(self, dataset_dic, batch_size=32, plane=0, shuffle=False, aug_transforms=False):
         
         dataset_iter = iter(dataset_dic.keys())
         for i in range(0, int(len(dataset_dic)/2)):
@@ -92,16 +92,8 @@ class LoadSeismicNumpyFiles():
         
         return gluon.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
-    def swapaxes(self, data, label, timeslice):
-        # swap the axes of the volumes to train on XLine
-        # if timeslice is true, swap axes of volume to train on time slices
-        if timeslice:
-            return data.swapaxes(0,2), label.swapaxes(0,2)
-        else:
-            return data.swapaxes(0,1), label.swapaxes(0,1)
-
     def random_noise_aug(self, data):
-        sigma = 0.223
+        sigma = 0.16
         data = random_noise(data, var=sigma**2)
         return np.float32(data)
 
@@ -127,37 +119,49 @@ class LoadSeismicNumpyFiles():
         return np.float32(data)
 
     def aug_transform(self, data, label):
-        """
-        augs_list = [self.sharpen_aug, 
-                     self.random_noise_aug]
-
-        for aug in augs_list:
-            data = aug(data)
-        """
         data = nd.array(data)
         label = nd.array(label)
 
-        #data, label = self.spatial_augmentations(data, label)
-        data = self.color_augmentations(data)
+        data, label = self.joint_transform(data, label)
         return data, label
 
-    def spatial_augmentations(self, data, label):
-        # augment images using mx.image augmentators
-        spatial_augs = [mx.image.HorizontalFlipAug(0.15)]
-         
-        for aug in spatial_augs:
-            data= aug(data)
-            label = aug(label)
+    def positional_augmentation(self, joint):
+        # Random crop
+        crop_height = 255
+        crop_width = 255
+        aug = mx.image.RandomCropAug(size=(crop_width, crop_height))
+        aug_joint = aug(joint)
+        # Horizontal Flip
+        aug = mx.image.HorizontalFlipAug(0.1)
+        aug_joint = aug(aug_joint)
+        # Add more translation/scale/rotation augmentations here...
+        return aug_joint
 
-        return data, label
+    def joint_transform(self, base, mask):
+        base = base.swapaxes(0,2).swapaxes(0,1)
+        mask = mask.swapaxes(0,2).swapaxes(0,1)
+        ### Join
+        # Concatinate on channels dim, to obtain an 6 channel image
+        # (3 channels for the base image, plus 3 channels for the mask)
+        base_channels = base.shape[2] # so we know where to split later on
+        joint = mx.nd.concat(base, mask, dim=2)
+
+        ### Augmentation Part 1: positional
+        aug_joint = self.positional_augmentation(joint)
+        
+        ### Split
+        aug_base = aug_joint[:, :, :base_channels].swapaxes(0,1).swapaxes(0,2)
+        aug_mask = aug_joint[:, :, base_channels:].swapaxes(0,1).swapaxes(0,2)
+        
+        ### Augmentation Part 2: color
+        aug_base = self.color_augmentations(aug_base)
+
+        return aug_base, aug_mask
 
     def color_augmentations(self, data):
         # augment images using mx.image augmentators
-        color_augs = [#mx.image.ContrastJitterAug(0.9),
-                      mx.image.BrightnessJitterAug(0.46),
-                      mx.image.SaturationJitterAug(0.46),
-                      #mx.image.HueJitterAug(0.3),
-                      mx.image.ColorJitterAug(0.46, 0.46, 0.46)]
+        color_augs = [mx.image.BrightnessJitterAug(0.46),
+                      mx.image.SaturationJitterAug(0.36)]
 
         data = data.swapaxes(0,2)
         for aug in color_augs:

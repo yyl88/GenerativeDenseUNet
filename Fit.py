@@ -37,7 +37,7 @@ class Fit():
     def _fit(self):
         lr_reduced = False
         lr = 0.001
-        thresh_hold = 0.90
+        thresh_hold = 0.91
         
         for i in range(self.epoch):
             t_acc = self.train_data_iterator()
@@ -54,9 +54,11 @@ class Fit():
                 #thresh_hold += 0.03
                 lr_reduced = True
                 
-                lr = 0.0001
+                lr = 0.00001
                 self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
                 print("learning rate reduced")
+                if v_by_acc > 0.92:
+                    break
 
     def latent_space(self):
          # Loop over the test data iterator.

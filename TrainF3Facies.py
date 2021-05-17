@@ -113,6 +113,9 @@ def plot_xample(xLine):
 
 net = JoelsSegNet()
 
+net.initialize(mx.init.Xavier(magnitude=2.24), ctx=mx.cpu())
+net.summary(F.random_uniform(shape=(32, 1, 255, 255)))
+net = JoelsSegNet()
 
 # set the context on GPU is available otherwise CPU
 ctx = [mx.gpu() if mx.test_utils.list_gpus() else mx.cpu()]
@@ -122,7 +125,7 @@ net.load_parameters("DenseRbfUnet_0", ctx)
 net.initialize(mx.init.Xavier(magnitude=2.24), ctx=ctx)
 net.hybridize()
 
-trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.001})
+trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.0001})
 
 # Use Accuracy as the evaluation metric.
 metric = mx.metric.Accuracy()
@@ -130,8 +133,8 @@ log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6)
 
 #--------------------------------------------------------------------------------------------------
 
-train_data = np_datasets.create_gluon_loader(np_datasets.training, plane=0, aug_transforms=True, shuffle=True)
-val_data = np_datasets.create_gluon_loader(np_datasets.validation, plane=0)
+train_data = np_datasets.create_gluon_loader(np_datasets.training, batch_size=32, plane=0, aug_transforms=True, shuffle=True)
+val_data = np_datasets.create_gluon_loader(np_datasets.validation, batch_size=32, plane=0)
 test_data = np_datasets.create_gluon_loader(np_datasets.testing)
 
 """
@@ -143,7 +146,7 @@ test_data = np_datasets.create_gluon_loader(np_datasets.testing, batch_size=32, 
 #--------------------------------------------------------------------------------------------------
 
 start = time.time()
-training_instance = Fit(net,ctx, trainer, metric, log_cosh_dice_loss, 20, train_data, val_data)
+training_instance = Fit(net,ctx, trainer, metric, log_cosh_dice_loss, 60, train_data, val_data)
 stop = time.time()
 print("%s seconds" % (start-stop))
 
@@ -180,7 +183,7 @@ code, labels = training_instance.latent_space()
 
 plot_rbfcenters_embeddings(code, labels, mu, gamma)
 
-plot_validation_vs_training_accuracy(20, training_instance.train_acc_softmax, 
+plot_validation_vs_training_accuracy(60, training_instance.train_acc_softmax, 
                                          training_instance.val_acc_softmax,
                                          training_instance.val_acc_bayes)
 

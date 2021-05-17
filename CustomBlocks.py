@@ -127,18 +127,18 @@ class CustomLinearBlock(nn.Block):
         return x.swapaxes(1,3)
 
 class SobelBlock(nn.HybridBlock):
-    def __init__(self, in_units, **kwargs):
+    def __init__(self, **kwargs):
         super(SobelBlock, self).__init__(**kwargs)
-        self.in_units = in_units
-        sobel_kernel = F.array([[1, 2, 1]], ctx=mx.gpu(0)).T * F.array([[1, 0, -1]], ctx=mx.gpu(0))
-        self.kx = F.ones(shape=(in_units, in_units, 3, 3), ctx=mx.gpu(0)) * sobel_kernel
-        self.ky = F.ones(shape=(in_units, in_units, 3, 3), ctx=mx.gpu(0)) * sobel_kernel.T
+        self.sobel_kernel = F.array([[1, 2, 1]], ctx=mx.gpu(0)).T * F.array([[1, 0, -1]], ctx=mx.gpu(0))
 
-    def forward(self, x):
-        gx = F.Convolution(x, self.kx, kernel=(3, 3), num_filter=self.in_units, no_bias=True, pad=(1,1), layout='NCHW')
-        gy = F.Convolution(x, self.ky, kernel=(3, 3), num_filter=self.in_units, no_bias=True, pad=(1,1), layout='NCHW')
+    def forward(self, x, in_units):
+        self.kx = F.ones(shape=(in_units, 1, 3, 3), ctx=mx.gpu(0)) * self.sobel_kernel
+        self.ky = F.ones(shape=(in_units, 1, 3, 3), ctx=mx.gpu(0)) * self.sobel_kernel.T
+
+        gx = F.Convolution(x, self.kx, kernel=(3, 3), num_filter=in_units, no_bias=True, pad=(1,1), layout='NCHW')
+        gy = F.Convolution(x, self.ky, kernel=(3, 3), num_filter=in_units, no_bias=True, pad=(1,1), layout='NCHW')
         
-        out = F.sqrt(gx*gx + gy*gy)
+        out = F.abs(gx) + F.abs(gy)
         return out
 
 class CosKernelBlock(nn.Block):
@@ -225,11 +225,14 @@ class LogCoshDiceLoss(Loss):
     Outputs:
         - **loss**: loss tensor with shape (batch_size,). 
     """
-    def __init__(self, num_classes, axis=1, weight=None, batch_axis=0, **kwargs):
+    def __init__(self, num_classes, tune_model=False, axis=1, weight=None, batch_axis=0, **kwargs):
         super(LogCoshDiceLoss, self).__init__(weight, batch_axis, **kwargs)
-        self.l2Norm = gluon.loss.L2Loss()
+        self.mse = gluon.loss.L2Loss()
         self._num_classes = num_classes
         self._axis = axis
+        self._tune_model = tune_model
+        if tune_model:
+            self.sobel = SobelBlock()
 
     def log_cosh_diceloss(self, F, pred, label, weight):
         smooth = 1
@@ -247,6 +250,15 @@ class LogCoshDiceLoss(Loss):
         one_hot = F.squeeze(one_hot, axis=4)
 
         log_cosh_diceloss = self.log_cosh_diceloss(F, pred, one_hot, weight)
-        mse_loss = self.l2Norm(syn, signal)
+        mse_loss = self.mse(syn, signal)
 
-        return 100*(log_cosh_diceloss) + mse_loss
+        loss = 100*log_cosh_diceloss + 10*mse_loss
+        
+        if self._tune_model:
+            pred_labels = F.expand_dims(F.argmax(F.softmax(pred, axis=1), axis=1), axis=1)
+            TvNorm_pred = F.stop_gradient(F.mean(self.sobel(pred_labels, pred.shape[0]), axis=self._batch_axis, exclude=True))
+            TvNorm_label = F.stop_gradient(F.mean(self.sobel(label, pred.shape[0]), axis=self._batch_axis, exclude=True))
+            TvNorm = self.mse(TvNorm_pred, TvNorm_label)
+            loss = loss + TvNorm
+
+        return loss
