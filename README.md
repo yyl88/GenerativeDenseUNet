@@ -1,5 +1,5 @@
-# RBFDenseUNet
-A UNet architecture with Dense blocks, and an RBF output.
+# Interpretable Deep Learning with RBFDenseUNet
+A UNet architecture with Dense blocks, and an RBF output for interpretable deep learning.
 
 An RBF based artificial neural network used for the purpose of semantic image segmentation. The backbone of this model is a DenseUNet. The head of the convolutional neural network is an RBF layer. Inference can be done using Bayes Theorem, or Softmax. 
 
