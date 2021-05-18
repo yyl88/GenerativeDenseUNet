@@ -120,12 +120,12 @@ net = JoelsSegNet()
 # set the context on GPU is available otherwise CPU
 ctx = [mx.gpu() if mx.test_utils.list_gpus() else mx.cpu()]
 
-net.load_parameters("DenseRbfUnet_0", ctx)
+#net.load_parameters("DenseRbfUnet_0", ctx)
 
 net.initialize(mx.init.Xavier(magnitude=2.24), ctx=ctx)
 net.hybridize()
 
-trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.0001})
+trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.001})
 
 # Use Accuracy as the evaluation metric.
 metric = mx.metric.Accuracy()
