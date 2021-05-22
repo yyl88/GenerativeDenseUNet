@@ -40,25 +40,25 @@ class Fit():
         thresh_hold = 0.91
         
         for i in range(self.epoch):
-            t_acc = self.train_data_iterator()
-            v_sf_acc = self.val_data_iterator()
-            v_by_acc = self.val_data_iterator(bayes=True)
+            t_acc, t_mIoU = self.train_data_iterator()
+            v_sf_acc, v_sf_mIoU = self.val_data_iterator()
+            v_by_acc, v_by_mIoU = self.val_data_iterator(bayes=True)
             
             self.train_acc_softmax.append(t_acc)
             self.val_acc_softmax.append(v_sf_acc)
             self.val_acc_bayes.append(v_by_acc)
 
-            print('epoch %d: train_acc = %f: val_acc_softmax = %f: val_acc_bayes = %f' % (i, t_acc*100, v_sf_acc*100, v_by_acc*100))
+            print('epoch %d: train_pixAcc = %f: val_pixAcc_softmax = %f: val_pixAcc_bayes = %f' % (i, t_acc, v_sf_acc, v_by_acc))
+            print('epoch %d: train_mIoU = %f: val_mIoU_softmax = %f: val_mIoU_bayes = %f' % (i, t_mIoU, v_sf_mIoU, v_by_mIoU))
 
-            if v_by_acc > thresh_hold and not lr_reduced:
-                #thresh_hold += 0.03
-                lr_reduced = True
-                
-                lr = 0.00001
-                self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
-                print("learning rate reduced")
-                if v_by_acc > 0.92:
-                    break
+            #if v_by_acc > thresh_hold and not lr_reduced:
+            #    #thresh_hold += 0.03
+            #    lr_reduced = True
+            #    
+            #    lr = 0.00001
+            #    self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
+            #    print("learning rate reduced")
+
 
     def latent_space(self):
          # Loop over the test data iterator.
@@ -106,9 +106,9 @@ class Fit():
                 output, synthetic = self.net.posterior(data_batch[0])
 
             # Updates internal evaluation
-            self.metric.update(label_batch[0], output)
+            self.metric.update(label_batch[0].swapaxes(0,1), output)
 
-        name, v_acc = self.metric.get()
+        v_acc, v_mIoU = self.metric.get()
 
         # Reset evaluation result to initial state.
         self.metric.reset()
@@ -119,7 +119,7 @@ class Fit():
             else:
                 return label.asnumpy(), nd.softmax(output, axis=1), synthetic.asnumpy()
         else:
-            return v_acc
+            return v_acc, v_mIoU
 
 
     def train_data_iterator(self):
@@ -141,15 +141,15 @@ class Fit():
             assert(output.shape[-2:] == label.shape[-2:])
 
             # Updates internal evaluation
-            self.metric.update(label_batch[0], output)
+            self.metric.update(label_batch[0].swapaxes(0,1), output)
 
             # Make one step of parameter update. Trainer needs to know the
             # batch size of data to normalize the gradient by 1/batch_size.
             self.trainer.step(data.shape[0])
         
         # Gets the evaluation result.
-        name, t_acc = self.metric.get()
+        t_acc, t_mIoU = self.metric.get()
         
         # Reset evaluation result to initial state.
         self.metric.reset()
-        return t_acc
+        return t_acc, t_mIoU

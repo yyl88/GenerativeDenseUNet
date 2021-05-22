@@ -1,0 +1,9 @@
+scikit_image==0.17.2
+scipy==1.5.4
+~umpy==1.18.5
+gluoncv==0.9.4.post1
+mxnet_cu101==1.5.0
+plotly==4.9.0
+mxnet==1.8.0.post0
+numpy==1.20.3
+skimage==0.0

@@ -128,7 +128,8 @@ net.hybridize()
 trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.001})
 
 # Use Accuracy as the evaluation metric.
-metric = mx.metric.Accuracy()
+#metric = mx.metric.Accuracy()
+metric = SegmentationMetric(6)
 log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6) 
 
 #--------------------------------------------------------------------------------------------------
@@ -146,13 +147,13 @@ test_data = np_datasets.create_gluon_loader(np_datasets.testing, batch_size=32, 
 #--------------------------------------------------------------------------------------------------
 
 start = time.time()
-training_instance = Fit(net,ctx, trainer, metric, log_cosh_dice_loss, 60, train_data, val_data)
+training_instance = Fit(net,ctx, trainer, metric, log_cosh_dice_loss, 100, train_data, val_data)
 stop = time.time()
 print("%s seconds" % (start-stop))
 
 #--------------------------------------------------------------------------------------------------
 
-label, prediction, synthetic = training_instance.val_data_iterator(inference=True, bayes=False)
+label, prediction, synthetic = training_instance.val_data_iterator(inference=True, bayes=True)
 prediction = prediction.asnumpy()
 
 fig = px.imshow(np_datasets.training['label'][0].T, color_continuous_scale='jet')
@@ -183,7 +184,7 @@ code, labels = training_instance.latent_space()
 
 plot_rbfcenters_embeddings(code, labels, mu, gamma)
 
-plot_validation_vs_training_accuracy(60, training_instance.train_acc_softmax, 
+plot_validation_vs_training_accuracy(100, training_instance.train_acc_softmax, 
                                          training_instance.val_acc_softmax,
                                          training_instance.val_acc_bayes)
 
