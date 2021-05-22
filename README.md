@@ -1,7 +1,7 @@
-# RBFDenseUNet
-A UNet architecture with Dense blocks, and an RBF output.
+# Interpretable Deep Learning with RBFDenseUNet
+A UNet architecture with Dense blocks, and an RBF output for interpretable deep learning.
 
-An RBF based artificial neural network used for the purpose of semantic image segmentation. The backbone of this model is a DenseUNet. The head of the convolutional neural network is an RBF layer. Inference can be done using Bayes Theorem, or Softmax. 
+An RBF based artificial neural network used for the purpose of semantic image segmentation and interpretation of seismic data. The backbone of this model is a DenseUNet. The head of the convolutional neural network is an RBF layer. Inference can be done using Bayes Theorem, or Softmax. 
 
 The dataset used for training and validation can be found in this repo: https://github.com/yalaudah/facies_classification_benchmark
 I was inspired by this repo which is worth looking into: https://github.com/microsoft/seismic-deeplearning
@@ -14,7 +14,7 @@ There is some commented code, these are ongoing experiments I am performing with
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot1.jpg)
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot2.jpg)
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot3.jpg)
-The CNN (DenseUNet) produces 4 feature maps. Then slices along axis 1 (takes a pixel from each feature map) and feeds this 4D vector into the RBF layer. 
+The CNN (DenseUNet) produces 4 feature maps (above). Then slices along axis 1 (takes a pixel from each feature map) and feeds this 4D vector into the RBF layer. 
 This allows the model to remain a fully convolutional neural network. 
 
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/SharedScreenshot4.jpg)
@@ -24,7 +24,7 @@ The image above is the embedding space (4D points/coordinates for each pixel in 
 Each pixel here corresponds to a 4D point in the tetrahedron (above).
 
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/181936468_5461194637287558_3655243639396744276_n.jpg)
-Bayes Theorem can be used for inferece. This image is showing REAL posterior probabilites for each pixel. 
+Bayes Theorem can be used for inferece. This image is showing REAL posterior probabilites (argmax(posterior probability) that a pixel belongs to the specified label/class). 
 
 ![alt text](https://github.com/jgcastro89/GenerativeDenseUNet/blob/main/screenshots/183034536_5461193310621024_6251143271430111991_n.jpg)
 Ground truth (compare to model predictions with Bayes inference above). 
