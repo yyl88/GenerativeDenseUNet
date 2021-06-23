@@ -16,7 +16,7 @@ class RbfBlock(nn.Block):
 
             self.mu = self.params.get('mu', shape=(units, in_units), init=mu_init)
             self.gamma = self.params.get('gamma', shape=(units, ), init=gamma_init)
-            
+
             if priors:
                 self.priors = self.params.get('prior', shape=(units, ), init=mx.init.Normal(0.5))
 
@@ -80,9 +80,9 @@ class CosRbfBlock(nn.Block):
         cos_kernel = self.cos_kernel(x.swapaxes(1,3), self.rbf_block.mu.data())
        
         if self.softmax_cos:
-            cos_kernel = F.softmax(cos_kernel*10, axis=3)
+            cos_kernel = F.softmax(cos_kernel, axis=3)
         
-        return cos_kernel.swapaxes(1,3) * likelihood
+        return cos_kernel.swapaxes(1,3) * likelihood #F.softmax(likelihood*60, axis=1)
 
 class LocalLinearBlock(nn.Block):
     def __init__(self, units, in_units, kernel="TriWeight", norm="l2", **kwargs):
@@ -112,10 +112,12 @@ class LocalLinearBlock(nn.Block):
         x = x + self.bias.data()
         return x.swapaxes(1,3) * rbf
 
-class CustomLinearBlock(nn.Block):
-    def __init__(self, units, in_units, **kwargs):
-        super(CustomLinearBlock, self).__init__(**kwargs)
+class CustomKdeBlock(nn.Block):
+    def __init__(self, units, in_units, w_softmax=False, **kwargs):
+        super(CustomKdeBlock, self).__init__(**kwargs)
         self.n_nodes = in_units
+        self.w_softmax = w_softmax
+
         with self.name_scope():
             self.weight = self.params.get('weight', shape=(units, in_units), init=mx.init.Xavier(magnitude=2.24))
 
@@ -124,7 +126,12 @@ class CustomLinearBlock(nn.Block):
 
         x = F.sum(F.expand_dims(x, axis=3) * self.weight.data(), axis=4)
 
-        return x.swapaxes(1,3)
+        x = x.swapaxes(1,3) 
+
+        if self.w_softmax:
+           x = F.softmax(x*10, axis=1)
+
+        return x
 
 class SobelBlock(nn.HybridBlock):
     def __init__(self, **kwargs):
@@ -155,7 +162,9 @@ class TriWeightKernelBlock(nn.Block):
         super(TriWeightKernelBlock, self).__init__(**kwargs)
 
     def forward(self, norm, gamma):
-        return F.relu((1 - gamma * norm**2)**5)
+        x = F.relu((1 - gamma * norm**2)**5)
+        x = 9 * (F.exp(x) - 1) /5
+        return x
 
 class GaussianKernelBlock(nn.Block):
     def __init__(self, **kwargs):
@@ -227,7 +236,9 @@ class LogCoshDiceLoss(Loss):
     """
     def __init__(self, num_classes, tune_model=False, axis=1, weight=None, batch_axis=0, **kwargs):
         super(LogCoshDiceLoss, self).__init__(weight, batch_axis, **kwargs)
+        self.softmax_cross_entropy_loss = gluon.loss.SoftmaxCELoss(axis=axis, from_logits=True, sparse_label=False, weight=0.1)
         self.mse = gluon.loss.L2Loss()
+        self.mae = gluon.loss.L1Loss()
         self._num_classes = num_classes
         self._axis = axis
         self._tune_model = tune_model
@@ -244,6 +255,11 @@ class LogCoshDiceLoss(Loss):
         score = (2 * tp + smooth) / (2 * tp + fp + fn + smooth)
         return F.log(F.cosh(1-score))
 
+    def bayes_pred(self, F, x):
+        evidence = F.expand_dims(F.sum(x, axis=1), axis=1)
+        posterior= x/evidence
+        return posterior  
+
     def hybrid_forward(self, F, pred, label, syn, signal):
         weight = F.Cast(label + 1, np.float32)/self._num_classes
         one_hot = F.one_hot(label, self._num_classes).swapaxes(1, 4)
@@ -252,13 +268,17 @@ class LogCoshDiceLoss(Loss):
         log_cosh_diceloss = self.log_cosh_diceloss(F, pred, one_hot, weight)
         mse_loss = self.mse(syn, signal)
 
-        loss = 100*log_cosh_diceloss + 10*mse_loss
+        #logits = F.log_softmax(pred, axis=self._axis) * (1 - F.softmax(pred, axis=self._axis))
+        #softmax_cross_entropy_loss = self.softmax_cross_entropy_loss(logits, one_hot)
+
+        loss = 100*log_cosh_diceloss + mse_loss
         
         if self._tune_model:
-            pred_labels = F.expand_dims(F.argmax(F.softmax(pred, axis=1), axis=1), axis=1)
+            #pred_labels = F.expand_dims(F.argmax(F.softmax(pred, axis=1), axis=1), axis=1)
+            pred_labels = F.expand_dims(F.argmax(self.bayes_pred(F, pred), axis=1), axis=1)
             TvNorm_pred = F.stop_gradient(F.mean(self.sobel(pred_labels, pred.shape[0]), axis=self._batch_axis, exclude=True))
             TvNorm_label = F.stop_gradient(F.mean(self.sobel(label, pred.shape[0]), axis=self._batch_axis, exclude=True))
-            TvNorm = self.mse(TvNorm_pred, TvNorm_label)
+            TvNorm = self.mae(TvNorm_pred, TvNorm_label)
             loss = loss + TvNorm
 
         return loss

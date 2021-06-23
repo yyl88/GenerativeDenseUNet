@@ -1,5 +1,6 @@
 import numpy as np
 import mxnet as mx
+import mxnet.ndarray as F
 from mxnet import gluon
 from gluoncv.utils.metrics import SegmentationMetric
 from skimage.util import random_noise
@@ -21,6 +22,8 @@ import time
 
 #--------------------------------------------------------------------------------------------------
 
+epochs = 16
+
 class JoelsSegNet(gluon.Block):
     r"""
     RBFDenseUNet
@@ -30,7 +33,7 @@ class JoelsSegNet(gluon.Block):
         super(JoelsSegNet, self).__init__(**kwargs)
         with self.name_scope():
             self.d0 = nn.HybridSequential()
-            self.d0.add(nn.Conv2D(6, kernel_size=7, strides=2, use_bias=False),
+            self.d0.add(nn.Conv2D(6, kernel_size=7, strides=2, use_bias=True),
                         nn.InstanceNorm(),
                         nn.Swish(),
                         nn.MaxPool2D(pool_size=3, strides=2, padding=1)
@@ -39,18 +42,17 @@ class JoelsSegNet(gluon.Block):
             self.DenseUNetBlock = DenseUNet(block_config=[6, 8, 32, 64], 
                                             growth_rate=[8, 12, 12, 12], 
                                             dropout=0.25)
-            
+
             self.ConvTranspose = nn.Conv2DTranspose(channels=4, 
                                                     kernel_size=9, 
                                                     strides=4, 
                                                     activation='tanh')
-
+             
             self.kdeBlock = nn.Sequential()
             self.kdeBlock.add(RbfBlock(3, 4, priors=False),
-                              CustomLinearBlock(1, 3)
+                              CustomKdeBlock(1, 3)
                               )
 
-            self.BatchNormBlock_0 = nn.BatchNorm()
             self.RbfBlock = CosRbfBlock(6, 4)
             self.BatchNormBlock_1 = nn.BatchNorm()
 
@@ -61,12 +63,13 @@ class JoelsSegNet(gluon.Block):
 
     def embeddings(self, x): 
         x0 = self.d0(x)
+        
         x1 = self.DenseUNetBlock(x0)
-        x2 = F.concat(x0, x1, dim=1)
+        #x2 = F.concat(x0, x1, dim=1)
 
-        x3 = self.ConvTranspose(x2)
+        x3 = self.ConvTranspose(x1)
         x4 = nd.Crop(*[x3,x], center_crop=True) 
-        return self.BatchNormBlock_0(x4), self.kdeBlock(x4)
+        return x4, self.kdeBlock(x4)
 
     def rbf_output(self, x):
         x, s = self.embeddings(x)
@@ -114,28 +117,28 @@ def plot_xample(xLine):
 net = JoelsSegNet()
 
 net.initialize(mx.init.Xavier(magnitude=2.24), ctx=mx.cpu())
-net.summary(F.random_uniform(shape=(32, 1, 255, 255)))
+net.summary(F.random_uniform(shape=(16, 1, 255, 255)))
 net = JoelsSegNet()
 
 # set the context on GPU is available otherwise CPU
 ctx = [mx.gpu() if mx.test_utils.list_gpus() else mx.cpu()]
 
-#net.load_parameters("DenseRbfUnet_0", ctx)
+net.load_parameters("DenseRbfUnet_2", ctx)
 
 net.initialize(mx.init.Xavier(magnitude=2.24), ctx=ctx)
 net.hybridize()
 
-trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.001})
+trainer = gluon.Trainer(net.collect_params(), 'adam', {'learning_rate': 0.0001})
 
 # Use Accuracy as the evaluation metric.
 #metric = mx.metric.Accuracy()
 metric = SegmentationMetric(6)
-log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6) 
+log_cosh_dice_loss = LogCoshDiceLoss(num_classes=6, tune_model=True) 
 
 #--------------------------------------------------------------------------------------------------
 
-train_data = np_datasets.create_gluon_loader(np_datasets.training, batch_size=32, plane=0, aug_transforms=True, shuffle=True)
-val_data = np_datasets.create_gluon_loader(np_datasets.validation, batch_size=32, plane=0)
+train_data = np_datasets.create_gluon_loader(np_datasets.training, batch_size=16, plane=0, aug_transforms=True, shuffle=True)
+val_data = np_datasets.create_gluon_loader(np_datasets.validation, batch_size=16, plane=0)
 test_data = np_datasets.create_gluon_loader(np_datasets.testing)
 
 """
@@ -147,7 +150,7 @@ test_data = np_datasets.create_gluon_loader(np_datasets.testing, batch_size=32, 
 #--------------------------------------------------------------------------------------------------
 
 start = time.time()
-training_instance = Fit(net,ctx, trainer, metric, log_cosh_dice_loss, 100, train_data, val_data)
+training_instance = Fit(net,ctx, trainer, metric, log_cosh_dice_loss, epochs, train_data, val_data)
 stop = time.time()
 print("%s seconds" % (start-stop))
 
@@ -184,9 +187,9 @@ code, labels = training_instance.latent_space()
 
 plot_rbfcenters_embeddings(code, labels, mu, gamma)
 
-plot_validation_vs_training_accuracy(100, training_instance.train_acc_softmax, 
-                                         training_instance.val_acc_softmax,
-                                         training_instance.val_acc_bayes)
+plot_validation_vs_training_accuracy(16, training_instance.train_acc_softmax, 
+                                             training_instance.val_acc_softmax,
+                                             training_instance.val_acc_bayes)
 
 
 fig = px.imshow(code[0][0].T, color_continuous_scale='cividis')
@@ -209,4 +212,4 @@ plot_xample(err[0].T)
 
 import pdb; pdb.set_trace()
 
-net.save_parameters("DenseRbfUnet_0")
+net.save_parameters("DenseRbfUnet_2")

@@ -37,7 +37,7 @@ class Fit():
     def _fit(self):
         lr_reduced = False
         lr = 0.001
-        thresh_hold = 0.91
+        thresh_hold = 0.88
         
         for i in range(self.epoch):
             t_acc, t_mIoU = self.train_data_iterator()
@@ -48,16 +48,17 @@ class Fit():
             self.val_acc_softmax.append(v_sf_acc)
             self.val_acc_bayes.append(v_by_acc)
 
-            print('epoch %d: train_pixAcc = %f: val_pixAcc_softmax = %f: val_pixAcc_bayes = %f' % (i, t_acc, v_sf_acc, v_by_acc))
-            print('epoch %d: train_mIoU = %f: val_mIoU_softmax = %f: val_mIoU_bayes = %f' % (i, t_mIoU, v_sf_mIoU, v_by_mIoU))
+            print('epoch %d: train_pixAcc   = %f:   val_pixAcc_softmax    = %f:   val_pixAcc_bayes  = %f' % (i, t_acc, v_sf_acc, v_by_acc))
+            print('epoch %d: train_mIoU     = %f:    val_mIoU_softmax     = %f:   val_mIoU_bayes    = %f' % (i, t_mIoU, v_sf_mIoU, v_by_mIoU))
+            print(" ")
 
-            #if v_by_acc > thresh_hold and not lr_reduced:
-            #    #thresh_hold += 0.03
-            #    lr_reduced = True
-            #    
-            #    lr = 0.00001
-            #    self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
-            #    print("learning rate reduced")
+            if v_by_acc > thresh_hold and not lr_reduced:
+                lr_reduced = True
+                
+                lr = 0.0001
+                self.trainer = gluon.Trainer(self.net.collect_params(), 'adam', {'learning_rate': lr})                
+                print("learning rate reduced")
+                #break
 
 
     def latent_space(self):

@@ -132,7 +132,7 @@ class LoadSeismicNumpyFiles():
         aug = mx.image.RandomCropAug(size=(crop_width, crop_height))
         aug_joint = aug(joint)
         # Horizontal Flip
-        aug = mx.image.HorizontalFlipAug(0.1)
+        aug = mx.image.HorizontalFlipAug(0.0)
         aug_joint = aug(aug_joint)
         # Add more translation/scale/rotation augmentations here...
         return aug_joint
